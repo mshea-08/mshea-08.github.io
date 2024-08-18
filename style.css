@@ -1,0 +1,195 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+.app-container {
+  display: inline-flex;
+  width: 100%;
+}
+
+.instructions-button{
+  margin-right: 0.75rem;
+}
+
+.navbar-brand{
+  margin-left: 0.75rem;
+}
+
+.pitch-heading{
+  margin-bottom: 0 !important;
+  margin-top: 0.75rem !important;
+}
+
+#pitch {
+  /* Height and width of image */
+  height: 391px; 
+  width: 600px;
+  background-color: #cccccc;
+  background-image: url("soccer-field.png");
+  position: relative;
+}
+.goal {
+  position: absolute;
+  height: 28%; /* Adjusted for vertical orientation */
+  width: 5.23%; /* Narrower to be more realistic */
+  top: 35%;
+  background: none;
+  border: 2px solid #000;
+}
+.goal.left {
+  left: 0;
+}
+.goal.right {
+  right: 0;
+}
+.center-circle {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: none;
+  border-radius: 50%;
+  border: 2px solid #000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.center-spot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.arrow-container {
+  display: flex;
+  align-items: center;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.button-container {
+  display: grid;
+}
+
+.right-arrow {
+  display: inline-block;
+  margin-left: 2.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid black;
+  border-left: 2px solid black;
+  transform-origin: center;
+  transform: rotate(135deg);
+}
+
+.right-arrow::after {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 45px;
+  background-color: black;
+  transform: rotate(-45deg) translate(15px, 4px);
+}
+
+.button-group {
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.button-container{
+  display: inline;
+  padding-top: 1rem;
+}
+
+.button-group button {
+  padding: 5px 10px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.event-button{
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-button{
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.surface-button{
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.remove-button{
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.dot {
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: black;
+  border-radius: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+}
+
+
+.dt-layout-table{
+  overflow-y: scroll !important;
+  max-height: 20rem !important;
+}
+
+#event-table {
+  width: 100%;
+  margin-top: 20px;
+}
+#event-table th,
+#event-table td {
+  padding: 5px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+#download-csv{
+  margin-top:1rem;
+}
+
+#graphics-redirect{
+  margin-top: 1rem;
+}
+
+.footer{
+  margin-top:1rem;
+}
+
+.tracked-events{
+  margin-top: 1rem !important;
+}
+
+.table-container{
+  overflow-y: scroll;
+  max-height: 25%;
+  height: 25%;
+}
+
+.table-scrollable {
+  display: inline-block;
+  width: 100%;
+  overflow-x: auto; /* Scroll on X-axis */
+  overflow-y: auto; /* Scroll on Y-axis */
+  max-height: 400px; /* Adjust based on your needs */
+}
+
+.dt-search{
+  text-align: left !important;
+}
+
