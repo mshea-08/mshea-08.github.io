@@ -501,7 +501,6 @@ function createArrow(x1, y1, x2, y2, id) {
     pitch.appendChild(svg);
 }
 
-///////////////////////////////// Download CSV function DOESNT WORK!!!
 function downloadCSV() {
     console.log(shotsData);
     fetch("/download_csv", {
