@@ -1,7 +1,7 @@
 var currentActionType = "";
 var currentDetail = "N/A";
 var currentSurface = "N/A";
-var sequence = 1;
+var currentTeam = 1;
 var half = 1;
 
 function sequencesave() {
@@ -50,7 +50,7 @@ $(document).ready(function () {
                 rawShots[i]["time"],
                 rawShots[i]["detail"],
                 rawShots[i]["surface"],
-                rawShots[i]["sequence"],
+                rawShots[i]["team"],
                 rawShots[i]["half"]
             );
         }
@@ -138,6 +138,31 @@ function setSurface(surface) {
     this.classList.add("active");
 }
 
+function setTeam(team) {
+    if (currentTeam == team) {
+        //Undo button active style
+        var buttons = document.querySelectorAll(".team-button");
+        // Remove the active class from all buttons
+        buttons.forEach(function (button) {
+            button.classList.remove("active");
+        });
+        currentActionType = "";
+        return;
+    }
+    // Set the current action type
+    currentTeam = team;
+
+    // Get all action buttons
+    var buttons = document.querySelectorAll(".team-button");
+
+    // Remove the active class from all buttons
+    buttons.forEach(function (button) {
+        button.classList.remove("active");
+    });
+    // This assumes that this function is called with 'this' bound to the clicked button
+    this.classList.add("active");
+}
+
 pitch.addEventListener("mousedown", function (event) {
     if (startX === null || startY === null) {
         isDragging = true;
@@ -163,7 +188,7 @@ pitch.addEventListener("mouseup", function (event) {
     if (isDragging) {
         isDragging = false;
         var currentTime = getCurrentDateTime();
-        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, sequence, half); // Pass start and end coordinates to addShot
+        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half); // Pass start and end coordinates to addShot
         rawShots.push({
             event: currentActionType, 
             startX: startX,
@@ -173,7 +198,7 @@ pitch.addEventListener("mouseup", function (event) {
             time: currentTime,
             detail: currentDetail,
             surface: currentSurface,
-            sequence: sequence,
+            team: currentTeam,
             half: half,
         });
         sessionStorage.setItem("rawShots", JSON.stringify(rawShots));
@@ -209,7 +234,7 @@ pitch.addEventListener("touchend", function (event) {
     if (isDragging) {
         isDragging = false;
         var currentTime = getCurrentDateTime();
-        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, sequence, half); // Pass start and end coordinates to addShot
+        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half); // Pass start and end coordinates to addShot
         rawShots.push({
             event: currentActionType, 
             startX: startX,
@@ -219,7 +244,7 @@ pitch.addEventListener("touchend", function (event) {
             time: currentTime,
             detail: currentDetail,
             surface: currentSurface,
-            sequence: sequence,
+            team: currentTeam,
             half: half,
         });
         sessionStorage.setItem("rawShots", JSON.stringify(rawShots));
@@ -244,7 +269,7 @@ function getCurrentDateTime() {
     );
 }
 
-function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, sequence, half) {
+function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, team, half) {
     let wasDragged =
         startX !== null &&
         startY !== null &&
@@ -263,7 +288,7 @@ function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, se
         wasDragged ? endX : "N/A",
         wasDragged ? endY : "N/A",
         half,
-        sequence,
+        team,
         "<button class='btn btn-outline-danger remove-button' onclick='removeShot(this)'>X</button>",
     ];
 
@@ -301,13 +326,13 @@ function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, se
         x2: wasDragged ? endX : "N/A",
         y2: wasDragged ? endY : "N/A",
         half,
-        sequence,
+        team: team,
     });
     localStorage.setItem("shotsData", JSON.stringify(shotsData));
     // populateDropdown();
 }
 
-function addShot(event, startX, startY, endX, endY, time, detail, surface, sequence, half) {
+function addShot(event, startX, startY, endX, endY, time, detail, surface, team, half) {
     let wasDragged =
         startX !== null &&
         startY !== null &&
@@ -326,7 +351,7 @@ function addShot(event, startX, startY, endX, endY, time, detail, surface, seque
         wasDragged ? endX : "N/A",
         wasDragged ? endY : "N/A",
         half, 
-        sequence,
+        team,
         "<button class='btn btn-outline-danger remove-button' onclick='removeShot(this)'>X</button>",
     ];
 
@@ -364,7 +389,7 @@ function addShot(event, startX, startY, endX, endY, time, detail, surface, seque
         x2: wasDragged ? endX : "N/A",
         y2: wasDragged ? endY : "N/A",
         half, 
-        sequence,
+        team: team,
     });
     localStorage.setItem("shotsData", JSON.stringify(shotsData));
     // populateDropdown();
@@ -530,6 +555,7 @@ document.addEventListener('keydown', function(event) {
     const detailButtons = document.querySelectorAll('.detail-button');
     const eventButtons = document.querySelectorAll('.event-button');
     const surfaceButtons = document.querySelectorAll('.surface-button');
+    const teamButtons = document.querySelectorAll('.team-button');
     if (event.key >= '1' && event.key <= '9') {
         // Calculate the index to select the right button
         const index = event.key - '1'; // Convert from string to number and adjust for 0-based indexing
@@ -592,6 +618,19 @@ document.addEventListener('keydown', function(event) {
         if (index < surfaceButtons.length) {
             // If the calculated button exists, simulate a click on it
             surfaceButtons[index].click();
+        }
+    }
+
+    const teamKeyMap = {
+        'N': 0, 
+        'M': 1, 
+    };
+    if (teamKeyMap.hasOwnProperty(event.key.toUpperCase())) {
+        // Get the index from the map
+        const index = surfaceKeyMap[event.key.toUpperCase()];
+        if (index < teamButtons.length) {
+            // If the calculated button exists, simulate a click on it
+            teamButtons[index].click();
         }
     }
 });
