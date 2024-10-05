@@ -627,7 +627,7 @@ document.addEventListener('keydown', function(event) {
     };
     if (teamKeyMap.hasOwnProperty(event.key.toUpperCase())) {
         // Get the index from the map
-        const index = surfaceKeyMap[event.key.toUpperCase()];
+        const index = teamKeyMap[event.key.toUpperCase()];
         if (index < teamButtons.length) {
             // If the calculated button exists, simulate a click on it
             teamButtons[index].click();
