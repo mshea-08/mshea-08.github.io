@@ -53,9 +53,17 @@
           </div>
         </div>
         <div>
-          <p></p>
-          <p>Sequence: <input type="number" value=1 id="sequence" onchange="sequencesave()"></p>
           <p>Half: <input type="number" value=1 id="half" onchange="halfsave()"></p>
+        </div>
+        <div>
+          <button class="btn btn-outline-primary btn-small team-button"
+              onclick="setTeamType.call(this, 'vassar');">
+              Team 1
+          </button>
+          <button class="btn btn-outline-primary btn-small team-button"
+              onclick="setTeam.call(this, 'opponent');">
+              Team 2
+          </button>
         </div>
       </div>
       <div class="button-container col-sm-12 col-md-12 col-lg-6">
