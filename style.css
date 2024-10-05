@@ -127,6 +127,11 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.team-button{
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .remove-button{
   padding-top: 0 !important;
   padding-bottom: 0 !important;
