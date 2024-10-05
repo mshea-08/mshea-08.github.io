@@ -1,12 +1,8 @@
 var currentActionType = "";
-var currentDetail = "N/A";
-var currentSurface = "N/A";
-var currentTeam = 1;
+var currentDetail = "";
+var currentSurface = "";
+var currentTeam = "";
 var half = 1;
-
-function sequencesave() {
-    sequence = document.getElementById("sequence").value;
-}
 
 function halfsave() {
     half = document.getElementById("half").value;
@@ -146,7 +142,7 @@ function setTeam(team) {
         buttons.forEach(function (button) {
             button.classList.remove("active");
         });
-        currentActionType = "";
+        currentTeam = "";
         return;
     }
     // Set the current action type
