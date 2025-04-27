@@ -8,6 +8,14 @@ function halfsave() {
     half = document.getElementById("half").value;
 }
 
+function minsave() {
+    half = document.getElementById("min").value;
+}
+
+function secsave() {
+    half = document.getElementById("sec").value;
+}
+
 if (sessionStorage.getItem("rawShots")) {
     var rawShots = JSON.parse(sessionStorage.getItem("rawShots"));
     var shotsData = [];
@@ -47,7 +55,9 @@ $(document).ready(function () {
                 rawShots[i]["detail"],
                 rawShots[i]["surface"],
                 rawShots[i]["team"],
-                rawShots[i]["half"]
+                rawShots[i]["half"],
+                rawShots[i]["min"],
+                rawShots[i]["sec"]
             );
         }
     };
@@ -184,7 +194,7 @@ pitch.addEventListener("mouseup", function (event) {
     if (isDragging) {
         isDragging = false;
         var currentTime = getCurrentDateTime();
-        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half); // Pass start and end coordinates to addShot
+        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half, min, sec); // Pass start and end coordinates to addShot
         rawShots.push({
             event: currentActionType, 
             startX: startX,
@@ -196,6 +206,8 @@ pitch.addEventListener("mouseup", function (event) {
             surface: currentSurface,
             team: currentTeam,
             half: half,
+            min: min,
+            sec: sec,
         });
         sessionStorage.setItem("rawShots", JSON.stringify(rawShots));
         startX = null;
@@ -230,7 +242,7 @@ pitch.addEventListener("touchend", function (event) {
     if (isDragging) {
         isDragging = false;
         var currentTime = getCurrentDateTime();
-        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half); // Pass start and end coordinates to addShot
+        addShot(currentActionType, startX, startY, endX, endY, currentTime, currentDetail, currentSurface, currentTeam, half, min, sec); // Pass start and end coordinates to addShot
         rawShots.push({
             event: currentActionType, 
             startX: startX,
@@ -242,6 +254,8 @@ pitch.addEventListener("touchend", function (event) {
             surface: currentSurface,
             team: currentTeam,
             half: half,
+            min: min,
+            sec: sec,
         });
         sessionStorage.setItem("rawShots", JSON.stringify(rawShots));
         startX = null;
@@ -265,7 +279,7 @@ function getCurrentDateTime() {
     );
 }
 
-function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, team, half) {
+function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, team, half, min, sec) {
     let wasDragged =
         startX !== null &&
         startY !== null &&
@@ -284,6 +298,8 @@ function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, te
         wasDragged ? endX : "N/A",
         wasDragged ? endY : "N/A",
         half,
+        min, 
+        sec,
         team,
         "<button class='btn btn-outline-danger remove-button' onclick='removeShot(this)'>X</button>",
     ];
@@ -328,7 +344,7 @@ function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, te
     // populateDropdown();
 }
 
-function addShot(event, startX, startY, endX, endY, time, detail, surface, team, half) {
+function addShot(event, startX, startY, endX, endY, time, detail, surface, team, half, min, sec) {
     let wasDragged =
         startX !== null &&
         startY !== null &&
@@ -347,6 +363,8 @@ function addShot(event, startX, startY, endX, endY, time, detail, surface, team,
         wasDragged ? endX : "N/A",
         wasDragged ? endY : "N/A",
         half, 
+        min, 
+        sec,
         team,
         "<button class='btn btn-outline-danger remove-button' onclick='removeShot(this)'>X</button>",
     ];
@@ -384,7 +402,9 @@ function addShot(event, startX, startY, endX, endY, time, detail, surface, team,
         y: startY,
         x2: wasDragged ? endX : "N/A",
         y2: wasDragged ? endY : "N/A",
-        half, 
+        half: half,
+        min: min,
+        sec: sec,
         team: team,
     });
     localStorage.setItem("shotsData", JSON.stringify(shotsData));
@@ -593,6 +613,7 @@ document.addEventListener('keydown', function(event) {
         'L': 8, 
         ';': 9, 
         '.': 10,
+        ',': 11,
     };
     if (eventKeyMap.hasOwnProperty(event.key.toUpperCase())) {
         // Get the index from the map
@@ -607,6 +628,8 @@ document.addEventListener('keydown', function(event) {
         'Z': 0, // Index of Head?????
         'X': 1, 
         'C': 2, 
+        'V': 3,
+        'B': 4,
     };
     if (surfaceKeyMap.hasOwnProperty(event.key.toUpperCase())) {
         // Get the index from the map
