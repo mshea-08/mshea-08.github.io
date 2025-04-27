@@ -618,6 +618,7 @@ document.addEventListener('keydown', function(event) {
         ';': 9, 
         '.': 10,
         ',': 11,
+        '/': 12,
     };
     if (eventKeyMap.hasOwnProperty(event.key.toUpperCase())) {
         // Get the index from the map
