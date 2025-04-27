@@ -340,6 +340,8 @@ function addShotTwo(event, startX, startY, endX, endY, time, detail, surface, te
         x2: wasDragged ? endX : "N/A",
         y2: wasDragged ? endY : "N/A",
         half,
+        min,
+        sec,
         team: team,
     });
     localStorage.setItem("shotsData", JSON.stringify(shotsData));
