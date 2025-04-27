@@ -55,6 +55,10 @@
         <div>
           <p></p>
           <p>Half: <input type="number" value=1 id="half" onchange="halfsave()"></p>
+          <p></p>
+          <p>Min: <input type="number" value=1 id="half" onchange="minsave()"></p>
+          <p></p>
+          <p>Sec: <input type="number" value=1 id="half" onchange="secsave()"></p>
         </div>
         <div class="btn-group button-container" role="group">
           <button class="btn btn-outline-primary btn-small team-button"
@@ -87,8 +91,12 @@
               Dribble (F)
             </button>
             <button class="btn btn-outline-primary btn-small event-button"
+              onclick="setActionType.call(this, 'goal kick');">
+              Goal kick (G)
+            </button>
+            <button class="btn btn-outline-primary btn-small event-button"
               onclick="setActionType.call(this, 'goalie restart');">
-              Goalie restart (G)
+              Goalie restart (,)
             </button>
           </div>
           <div class="btn-group-vertical col-sm-12 col-md-6" role="group">
@@ -107,12 +115,12 @@
               Throw in (L)
             </button>
             <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'rebound');">
-              Rebound (;)
+              onclick="setActionType.call(this, 'interception');">
+              Interception (;)
             </button>
             <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'ball lost');">
-              Ball lost (.)
+              onclick="setActionType.call(this, 'tackle');">
+              Tackle (.)
             </button>
           </div>
         </div>
@@ -131,11 +139,19 @@
             <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">
               Blocked (4)
             </button>
+          </div>
+          <div class="btn-group button-container" role="group">
             <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">
               Complete (5)
             </button>
             <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">
               Incomplete (6)
+            </button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">
+              Won ball (7)
+            </button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">
+              Lost ball (7)
             </button>
           </div>
         </div>
@@ -150,6 +166,12 @@
             </button>
             <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'volley');">
               Volley (C)
+            </button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'punt');">
+              Punt (V)
+            </button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'pass');">
+              Pass (B)
             </button>
           </div>
         </div>
@@ -171,6 +193,8 @@
                 <th scope="col">x2</th>
                 <th scope="col">y2</th>
                 <th scope="col">half</th>
+                <th scope="col">min</th>
+                <th scope="col">sec</th>
                 <th scope="col">team</th>
                 <th scope="col">X</th>
               </tr>
