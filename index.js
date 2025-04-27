@@ -3,6 +3,8 @@ var currentDetail = "";
 var currentSurface = "";
 var currentTeam = "";
 var half = 1;
+var min = 0;
+var sec = 1;
 
 function halfsave() {
     half = document.getElementById("half").value;
