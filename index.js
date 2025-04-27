@@ -9,11 +9,11 @@ function halfsave() {
 }
 
 function minsave() {
-    half = document.getElementById("min").value;
+    min = document.getElementById("min").value;
 }
 
 function secsave() {
-    half = document.getElementById("sec").value;
+    sec = document.getElementById("sec").value;
 }
 
 if (sessionStorage.getItem("rawShots")) {
