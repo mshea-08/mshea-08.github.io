@@ -572,38 +572,17 @@ function downloadCSV() {
 ///////////////////////////////// Keyboard Shortcuts
 document.addEventListener('keydown', function(event) {
     // Player Selection
-    const detailButtons = document.querySelectorAll('.detail-button');
     const eventButtons = document.querySelectorAll('.event-button');
-    const surfaceButtons = document.querySelectorAll('.surface-button');
     const teamButtons = document.querySelectorAll('.team-button');
-    if (event.key >= '1' && event.key <= '9') {
-        // Calculate the index to select the right button
-        const index = event.key - '1'; // Convert from string to number and adjust for 0-based indexing
-        if (index < detailButtons.length) {
+//    if (event.key >= '1' && event.key <= '9') {
+    //        // Calculate the index to select the right button
+    //    const index = event.key - '1'; // Convert from string to number and adjust for 0-based indexing
+     //   if (index < detailButtons.length) {
             // If the calculated button exists, simulate a click on it
-            detailButtons[index].click();
-        }
-    }
-    const detailkeyMap = {
-        '0': 9, // Index of P10 
-        'Q': 10, // Index of P11 
-        'W': 11, // Index of P12
-        'E': 12, // Index of P13
-        'R': 13, // Index of P14
-        'T': 14, // Index of P15
-        'Y': 15, // Index of P16
-    };
-    
-    // Check if the pressed key is in our map
-    if (detailkeyMap.hasOwnProperty(event.key.toUpperCase())) {
-        // Get the index from the map
-        const index = detailkeyMap[event.key.toUpperCase()];
-        const detailButtons = document.querySelectorAll('.detail-button');
-        if (index < detailButtons.length) {
-            // If the calculated button exists, simulate a click on it
-            detailButtons[index].click();
-        }
-    }
+      //      detailButtons[index].click();
+//        }
+//    }
+
 
     const eventKeyMap = {
         'A': 0, 
@@ -629,21 +608,6 @@ document.addEventListener('keydown', function(event) {
         }
     }
 
-    const surfaceKeyMap = {
-        'Z': 0, // Index of Head?????
-        'X': 1, 
-        'C': 2, 
-        'V': 3,
-        'B': 4,
-    };
-    if (surfaceKeyMap.hasOwnProperty(event.key.toUpperCase())) {
-        // Get the index from the map
-        const index = surfaceKeyMap[event.key.toUpperCase()];
-        if (index < surfaceButtons.length) {
-            // If the calculated button exists, simulate a click on it
-            surfaceButtons[index].click();
-        }
-    }
 
     const teamKeyMap = {
         'N': 0, 
