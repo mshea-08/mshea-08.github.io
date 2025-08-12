@@ -273,7 +273,7 @@ document.addEventListener('keydown', function(event){
   if (tk.hasOwnProperty(k)){ const idx = tk[k]; if (idx < teamButtons.length)  teamButtons[idx].click(); }
 });
 
-<script>
+
 document.addEventListener('DOMContentLoaded', function(){
   const groups = [
     { id: 'eventButtons',   key: 'order_events',   itemClass: '.event-button'   },
@@ -319,5 +319,4 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 });
-</script>
 
