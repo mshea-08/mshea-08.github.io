@@ -183,13 +183,66 @@ function createArrow(x1,y1,x2,y2,id){
   pitchEl.appendChild(svg);
 }
 
-function downloadCSV(){
-  fetch('/download_csv', { method:'POST', body: JSON.stringify(state.shotsData), headers:{ 'Content-Type':'application/json' } })
-  .then(r=> r.blob())
-  .then(blob=>{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shots_data.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); })
-  .catch(err=> console.error('CSV error:', err));
+// Export the DataTable (visible rows) to CSV on the client
+function downloadCSV() {
+  // Prefer the initialized DataTable
+  let dt = null;
+  if ($ && $.fn && $.fn.dataTable && $.fn.dataTable.isDataTable('#event-table')) {
+    dt = $('#event-table').DataTable();
+  }
+
+  let headers = [];
+  let rows = [];
+
+  if (dt) {
+    // Build a list of column indices to export (skip the delete 'X' column)
+    const allHeaders = dt.columns().header().toArray().map(th => th.textContent.trim());
+    const exportIdxs = allHeaders
+      .map((h, i) => (h.toLowerCase() === 'x' ? null : i))
+      .filter(i => i !== null);
+
+    headers = exportIdxs.map(i => allHeaders[i]);
+
+    // Get currently displayed rows (respects search/filter)
+    dt.rows({ search: 'applied' }).every(function () {
+      const data = this.data(); // array for your setup
+      rows.push(exportIdxs.map(i => data[i]));
+    });
+  } else if (window.state && Array.isArray(state.shotsData) && state.shotsData.length) {
+    // Fallback: export from state.shotsData if DataTables isn't ready
+    headers = ['time','detail','event','surface','x1','y1','x2','y2','half','min','sec','team'];
+    rows = state.shotsData.map(o => [
+      o.time, o.detail, o.action, o.surface, o.x, o.y, o.x2, o.y2, o.half, o.min, o.sec, o.team
+    ]);
+  } else {
+    alert('No data to export yet.');
+    return;
+  }
+
+  // CSV builder (Excel-friendly: includes BOM + CRLF)
+  const esc = (v) => {
+    if (v === null || v === undefined) v = '';
+    v = String(v);
+    return `"${v.replace(/"/g, '""')}"`;
+    };
+  const csv = '\uFEFF' + [
+    headers.map(esc).join(','),
+    ...rows.map(r => r.map(esc).join(','))
+  ].join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'events.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
 }
+
+// keep the global binding the same
 window.downloadCSV = downloadCSV;
+
 
 // Keyboard shortcuts retained
 
