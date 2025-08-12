@@ -40,7 +40,6 @@ window.halfsave = halfsave; window.minsave = minsave; window.secsave = secsave;
   try { const sd = localStorage.getItem("shotsData"); if (sd) state.shotsData = JSON.parse(sd) || []; } catch {}
 })();
 
-
 // -------------------------------
 // 2) DataTable init
 // -------------------------------
@@ -51,51 +50,11 @@ $(document).ready(function(){
     responsive: true,
     language: { searchPlaceholder: 'Filter by Detail and Event' }
   });
-
-  // Restore rows (includes note if present)
   if (state.rawShots.length){
     for (const r of state.rawShots){
-      addRowToTable(
-        r.event, r.startX, r.startY, r.endX, r.endY,
-        r.time, r.detail, r.surface, r.team, r.half, r.min, r.sec,
-        r.note || ''
-      );
+      addRowToTable(r.event, r.startX, r.startY, r.endX, r.endY, r.time, r.detail, r.surface, r.team, r.half, r.min, r.sec);
     }
   }
-
-  // Inline note editing (delegated)
-  $('#event-table tbody').on('click', 'td.note-cell', function(){
-    const td = this;
-    if (td.querySelector('.note-editor')) return; // already editing
-
-    const oldText = td.textContent || '';
-    td.dataset.old = oldText;
-
-    td.innerHTML = `<input type="text" class="form-control form-control-sm note-editor" />`;
-    const input = td.querySelector('.note-editor');
-    input.value = oldText;
-    input.focus(); input.select();
-
-    function save(val){
-      // Update table cell
-      state.table.cell(td).data(val).draw(false);
-
-      // Sync backing arrays by current display index
-      const rowEl = $(td).closest('tr')[0];
-      const idx = state.table.row(rowEl).index();
-      if (idx !== undefined && idx >= 0){
-        if (state.shotsData[idx]) { state.shotsData[idx].note = val; localStorage.setItem('shotsData', JSON.stringify(state.shotsData)); }
-        if (state.rawShots[idx])  { state.rawShots[idx].note  = val; sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots)); }
-      }
-    }
-    function cancel(){ state.table.cell(td).data(td.dataset.old || '').draw(false); }
-
-    input.addEventListener('keydown', (e)=>{
-      if (e.key === 'Enter'){ e.preventDefault(); save(input.value.trim()); }
-      else if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
-    });
-    input.addEventListener('blur', ()=> save(input.value.trim()));
-  });
 });
 
 // -------------------------------
@@ -171,11 +130,6 @@ function finishDrag(){
   state.drag.active = false;
   const now = getCurrentDateTime();
   const wasDragged = state.drag.x1!==null && state.drag.y1!==null && state.drag.x2!==null && state.drag.y2!==null && (state.drag.x1!==state.drag.x2 || state.drag.y1!==state.drag.y2);
-
-  // Pull optional note (if note input exists)
-  const noteInput = document.getElementById('note');
-  const noteText = (noteInput?.value || '').trim();
-
   const rec = {
     event: state.currentActionType,
     startX: state.drag.x1, startY: state.drag.y1,
@@ -185,29 +139,14 @@ function finishDrag(){
     detail: state.currentDetail,
     surface: state.currentSurface,
     team: state.currentTeam,
-    half: state.half, min: state.min, sec: state.sec,
-    note: noteText
+    half: state.half, min: state.min, sec: state.sec
   };
-
-  addRowToTable(
-    rec.event, rec.startX, rec.startY, rec.endX, rec.endY,
-    rec.time, rec.detail, rec.surface, rec.team, rec.half, rec.min, rec.sec,
-    rec.note
-  );
-
+  addRowToTable(rec.event, rec.startX, rec.startY, rec.endX, rec.endY, rec.time, rec.detail, rec.surface, rec.team, rec.half, rec.min, rec.sec);
   state.rawShots.push(rec);
   sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots));
-  state.shotsData.push({
-    time: rec.time, detail: rec.detail, action: rec.event, surface: rec.surface,
-    x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A',
-    half: rec.half, min: rec.min, sec: rec.sec, team: rec.team,
-    note: rec.note
-  });
+  state.shotsData.push({ time: rec.time, detail: rec.detail, action: rec.event, surface: rec.surface, x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A', half: rec.half, min: rec.min, sec: rec.sec, team: rec.team });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
-
-  // Clear drag + (optional) clear note box after commit
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
-  if (noteInput) noteInput.value = '';
 }
 
 // -------------------------------
@@ -218,56 +157,15 @@ function getCurrentDateTime(){
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec, note=''){
-  const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) &&
-                     Number.isFinite(endX) && Number.isFinite(endY) &&
-                     (startX!==endX || startY!==endY);
-
-  // Build row strictly following header order so columns never misalign.
-  const headers = Array.from(document.querySelectorAll('#event-table thead th'))
-    .map(th => (th.textContent || '').trim().toLowerCase());
-
-  const values = {
-    'time'  : time,
-    'detail': detail || '',
-    'event' : eventName || '',
-    'surface': surface || '',
-    'x1'    : startX ?? '',
-    'y1'    : startY ?? '',
-    'x2'    : wasDragged ? endX : 'N/A',
-    'y2'    : wasDragged ? endY : 'N/A',
-    'half'  : half ?? '',
-    'min'   : min ?? '',
-    'sec'   : sec ?? '',
-    'team'  : team || '',
-    'note'  : note || '',
-    'x'     : "<button class='btn btn-outline-danger remove-button'>X</button>"
-  };
-
-  const rowData = headers.map(h => (h in values) ? values[h] : '');
+function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec){
+  const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) && Number.isFinite(endX) && Number.isFinite(endY) && (startX!==endX || startY!==endY);
+  const rowData = [ time, detail||'', eventName||'', surface||'', startX??'', startY??'', wasDragged?endX:'N/A', wasDragged?endY:'N/A', half??'', min??'', sec??'', team||'', "<button class='btn btn-outline-danger remove-button'>X</button>" ];
   const rowIdx = state.table.row.add(rowData).draw().index();
   const rowNode = state.table.row(rowIdx).node();
-
-  // store normalized coords for hover dots/arrows
   rowNode.dataset.dotx = (startX*1.0)/120; rowNode.dataset.doty = (startY*1.0)/80;
-  if (wasDragged){ rowNode.dataset.dotx2 = (endX*1.0)/120; rowNode.dataset.doty2 = (endY*1.0)/80; }
-  else { delete rowNode.dataset.dotx2; delete rowNode.dataset.doty2; }
-
-  // hover dots
-  $(rowNode).on('mouseenter', function(){ showDot(this); })
-            .on('mouseleave', function(){ removeDot(); });
-
-  // delete
+  if (wasDragged){ rowNode.dataset.dotx2 = (endX*1.0)/120; rowNode.dataset.doty2 = (endY*1.0)/80; } else { delete rowNode.dataset.dotx2; delete rowNode.dataset.doty2; }
+  $(rowNode).on('mouseenter', function(){ showDot(this); }).on('mouseleave', function(){ removeDot(); });
   $(rowNode).find('.remove-button').on('click', function(){ removeShot(this); });
-
-  // tag NOTE cell for inline editing
-  const noteIndex = headers.indexOf('note');
-  if (noteIndex !== -1){
-    const $cells = $(rowNode).find('td');
-    $cells.eq(noteIndex).addClass('note-cell');
-  }
-
-  // Show dot immediately
   $(rowNode).trigger('mouseenter');
 }
 
@@ -318,29 +216,25 @@ function downloadCSV(){
 window.downloadCSV = downloadCSV;
 
 // -------------------------------
-// 7) Keyboard shortcuts — non-invasive, safe while typing
+// 7) Keyboard shortcuts
 // -------------------------------
 (function(){
   // --- maps ---
   const EVENT_HOTKEYS = [
     ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'], ['H','cross'],
-    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'],
-    [',','goal kick'], ['/','goalie restart'], ['P','foul']
+    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
     // ['O','opp goal']
   ];
   const DETAIL_HOTKEYS = [
-    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'],
-    ['T','complete'], ['Y','incomplete'], ['U','offside'],
-    ['I','won ball'], ['O','lost ball']
+    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']
   ];
-  const SURFACE_HOTKEYS = [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']];
+  const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
   const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
 
   // --- helpers ---
   const norm = s => (s||'').toLowerCase();
   function clickByText(selector, needle){
-    const btn = Array.from(document.querySelectorAll(selector))
-      .find(b => norm(b.textContent).includes(norm(needle)));
+    const btn = Array.from(document.querySelectorAll(selector)).find(b => norm(b.textContent).includes(norm(needle)));
     if (btn) btn.click();
   }
   function undoLast(){
@@ -348,78 +242,39 @@ window.downloadCSV = downloadCSV;
     const rows = tbody.querySelectorAll('tr'); const last = rows[rows.length-1]; if (!last) return;
     last.querySelector('.remove-button')?.click();
   }
-  function setFieldValue(id, val){
-    const el = document.getElementById(id); if(!el) return;
-    el.value = String(val); el.dispatchEvent(new Event('change'));
-  }
+  function setFieldValue(id, val){ const el = document.getElementById(id); if(!el) return; el.value = String(val); el.dispatchEvent(new Event('change')); }
   function adjustSeconds(delta){
     const sEl = document.getElementById('sec'); const mEl = document.getElementById('min'); if (!sEl || !mEl) return;
     let total = Number(mEl.value||0)*60 + Number(sEl.value||0) + delta; if (total < 0) total = 0;
-    const newMin = Math.floor(total/60), newSec = total % 60;
-    setFieldValue('min', newMin); setFieldValue('sec', newSec);
+    const newMin = Math.floor(total/60), newSec = total % 60; setFieldValue('min', newMin); setFieldValue('sec', newSec);
   }
-  function adjustMinutes(delta){
-    const mEl = document.getElementById('min'); if(!mEl) return;
-    const next = Math.max(0, Number(mEl.value||0) + delta);
-    setFieldValue('min', next);
-  }
-  function isTypingTarget(el){
-    if (!el) return false;
-    if (el.isContentEditable) return true;
-    const tag = el.tagName ? el.tagName.toUpperCase() : '';
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-    if (el.classList && el.classList.contains('note-editor')) return true;
-    if (el.closest && el.closest('.dataTables_wrapper')) return true; // DT search box
-    return false;
-  }
+  function adjustMinutes(delta){ const mEl = document.getElementById('min'); if(!mEl) return; const next = Math.max(0, Number(mEl.value||0) + delta); setFieldValue('min', next); }
 
-  // Bubble-phase listener; only stops events we actually handle
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
-    if (isTypingTarget(e.target)) return; // let typing through
-
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
     // Undo: Ctrl/Cmd+Z
-    if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); e.stopImmediatePropagation(); undoLast(); return; }
+    if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); undoLast(); return; }
 
     // Time nudges: seconds [ ] (+Shift = ±5), minutes -/=
-    if (key === '[' || key === ']'){
-      e.preventDefault(); e.stopImmediatePropagation();
-      adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1));
-      return;
-    }
-    if (key === '-' || key === '_' || key === '=' || key === '+'){
-      e.preventDefault(); e.stopImmediatePropagation();
-      adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1));
-      return;
-    }
+    if (key === '[' || key === ']'){ e.preventDefault(); adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1)); return; }
+    if (key === '-' || key === '_' || key === '=' || key === '+'){ e.preventDefault(); adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1)); return; }
 
     // Teams: N/M and 1/2
-    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); e.stopImmediatePropagation(); b.click(); } return; }
-    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); e.stopImmediatePropagation(); b.click(); } return; }
+    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); b.click(); } return; }
+    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); b.click(); } return; }
 
     // Events
-    for (const [k,txt] of EVENT_HOTKEYS){
-      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.event-button', txt); return; }
-    }
+    for (const [k,txt] of EVENT_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.event-button', txt); return; } }
 
     // Details
-    for (const [k,txt] of DETAIL_HOTKEYS){
-      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.detail-button', txt); return; }
-    }
+    for (const [k,txt] of DETAIL_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.detail-button', txt); return; } }
 
     // Surfaces (+ Throw = Shift+T)
-    for (const [k,txt] of SURFACE_HOTKEYS){
-      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.surface-button', txt); return; }
-    }
-    if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){
-      e.preventDefault(); e.stopImmediatePropagation(); clickByText('.surface-button','throw'); return;
-    }
-  });
-})();
-
-
+    for (const [k,txt] of SURFACE_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.surface-button', txt); return; } }
+    if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){ e.preventDefault(); clickByText('.surface-button','throw'); return; }
+  }, true); // capture=true so we win over any older handlers
 
   // -------------------------------
   // 8) Button labels — add (Key) into the button text
