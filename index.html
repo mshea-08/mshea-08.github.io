@@ -1,214 +1,152 @@
 <!doctype html>
-
 <html lang="en">
-
 <head>
-  <link rel="stylesheet" type="text/css" href="style.css" />
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Football Event Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/2.0.1/css/dataTables.dataTables.css" />
   <script src="https://cdn.datatables.net/2.0.1/js/dataTables.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css" />
   <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
-  <title>Football Event Tracker</title>
 </head>
-
 <body>
-  <div class="container-fluid">
-    <div class="row">
-      <nav class="navbar navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Football Event Tracker</a>
-        <form class="form-inline">
-          <button type="button" class="btn btn-outline-light instructions-button" data-bs-toggle="modal"
-            data-bs-target="#exampleModal">Info</button>
-        </form>
-      </nav>
+  <!-- Top Bar -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Football Event Tracker</a>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light instructions-button" data-bs-toggle="modal" data-bs-target="#infoModal">Info</button>
+        <button type="button" id="download-csv" class="btn btn-primary" onclick="downloadCSV()">Export CSV</button>
+      </div>
     </div>
-    <div class="row">
-      <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h4 class="modal-title" id="exampleModalLabel">Info</h4>
-            </div>
-            <div class="modal-body">
-              <p>This is a modified version of the event tracker <a href="https://splxgoal-jkomar.pythonanywhere.com/?trk=article-ssr-frontend-pulse_little-text-block">here</a> 
-              which was developed by Chaitanya Jadhav and John Komar.</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
-            </div>
-          </div>
+  </nav>
+
+  <!-- Info Modal -->
+  <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="infoLabel">Info</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>This is a modified version of the event tracker <a href="https://splxgoal-jkomar.pythonanywhere.com/?trk=article-ssr-frontend-pulse_little-text-block">here</a> which was developed by Chaitanya Jadhav and John Komar.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
-      <div class="col xs-12 col-sm-12 col-md-12 col-lg-6">
+    </div>
+  </div>
+
+  <div class="container-fluid py-3">
+    <div class="row g-3">
+      <!-- Left: Pitch + Controls -->
+      <div class="col-12 col-lg-6">
         <h5 class="pitch-heading">Pitch</h5>
         <div class="pitch-container">
-          <div id="pitch">
-            <!-- <img src="soccer-field.png"> -->
+          <div id="pitch"></div>
+        </div>
+
+        <!-- Compact Controls Bar -->
+        <div class="card mt-3">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-7">
+                <div class="row g-2">
+                  <div class="col-4">
+                    <label class="form-label mb-0 small">Half</label>
+                    <input type="number" id="half" class="form-control form-control-sm" value="1" onchange="halfsave()"/>
+                  </div>
+                  <div class="col-4">
+                    <label class="form-label mb-0 small">Min</label>
+                    <input type="number" id="min" class="form-control form-control-sm" value="0" onchange="minsave()"/>
+                  </div>
+                  <div class="col-4">
+                    <label class="form-label mb-0 small">Sec</label>
+                    <input type="number" id="sec" class="form-control form-control-sm" value="0" onchange="secsave()"/>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-5">
+                <label class="form-label mb-0 small d-block">Team</label>
+                <div class="btn-group w-100" role="group">
+                  <button class="btn btn-outline-primary btn-small team-button" onclick="setTeam.call(this, 'team 1');">Team 1 (N)</button>
+                  <button class="btn btn-outline-primary btn-small team-button" onclick="setTeam.call(this, 'team 2');">Team 2 (M)</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div>
-          <p></p>
-          <p>Half: <input type="number" value=1 id="half" onchange="halfsave()"></p>
-        </div>
-        <div>
-          <p></p>
-          <p>Min: <input type="number" value=0 id="min" onchange="minsave()"></p>
-        </div>
-        <div>
-          <p></p>
-          <p>Sec: <input type="number" value=0 id="sec" onchange="secsave()"></p>
-        </div>
-        <div class="btn-group button-container" role="group">
-          <button class="btn btn-outline-primary btn-small team-button"
-              onclick="setTeam.call(this, 'team 1');">
-              Team 1 (N)
-          </button>
-          <button class="btn btn-outline-primary btn-small team-button"
-              onclick="setTeam.call(this, 'team 2');">
-              Team 2 (M)
-          </button>
-        </div>
       </div>
-      <div class="button-container col-sm-12 col-md-12 col-lg-6">
+
+      <!-- Right: Event/Detail/Surface -->
+      <div class="col-12 col-lg-6">
+        <!-- Event -->
         <div class="row">
           <h5 class="heading">Event</h5>
           <div class="btn-group-vertical col-sm-12 col-md-6" role="group">
-            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'shot');">
-              Shot (A)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'cross');">
-              Cross (S)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'pass');">
-              Pass (D)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'dribble');">
-              Dribble (F)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'goal kick');">
-              Goal kick (G)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'goalie restart');">
-              Goalie restart (H)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'foul');">
-              Foul
-            </button>
-             <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'opp goal');">
-              Opponent Goal
-            </button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'shot');">Shot (A)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'cross');">Cross (S)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'pass');">Pass (D)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'dribble');">Dribble (F)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'goal kick');">Goal kick (G)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'goalie restart');">Goalie restart (H)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'foul');">Foul</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'opp goal');">Opponent Goal</button>
           </div>
           <div class="btn-group-vertical col-sm-12 col-md-6" role="group">
-            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'free kick');">
-              Free kick (J)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'free kick shot');">
-              Free kick shot (K)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'corner');">
-              Corner (L)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'throw in');">
-              Throw in (;)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'interception');">
-              Interception (.)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'tackle');">
-              Tackle (,)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'clearance');">
-              Clearance (/)
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'game start');">
-              Game Start
-            </button>
-            <button class="btn btn-outline-primary btn-small event-button"
-              onclick="setActionType.call(this, 'game stop');">
-              Game Stop
-            </button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'free kick');">Free kick (J)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'free kick shot');">Free kick shot (K)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'corner');">Corner (L)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'throw in');">Throw in (;)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'interception');">Interception (.)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'tackle');">Tackle (,)</button>
+            <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'clearance');">Clearance (/)</button>
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'game start');">Game Start</button>
+              <button class="btn btn-outline-primary btn-small event-button" onclick="setActionType.call(this, 'game stop');">Game Stop</button>
+            </div>
           </div>
         </div>
-        <div class="row">
+
+        <!-- Detail -->
+        <div class="row mt-2">
           <h5 class="heading">Detail</h5>
           <div class="btn-group button-container" role="group">
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'goal');">
-              Goal 
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'on target');">
-              On target
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'off target');">
-              Off target 
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">
-              Blocked
-            </button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'goal');">Goal</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'on target');">On target</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'off target');">Off target</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">Blocked</button>
           </div>
           <div class="btn-group button-container" role="group">
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">
-              Complete
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">
-              Incomplete 
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'offside');">
-              Offside 
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">
-              Won ball 
-            </button>
-            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">
-              Lost ball 
-            </button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">Complete</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">Incomplete</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'offside');">Offside</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">Won ball</button>
+            <button class="btn btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">Lost ball</button>
           </div>
         </div>
-        <div class="row">
+
+        <!-- Surface -->
+        <div class="row mt-2">
           <h5 class="heading">Surface</h5>
           <div class="btn-group button-container" role="group">
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'foot');">
-              Foot 
-            </button>
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'head');">
-              Head 
-            </button>
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'volley');">
-              Volley 
-            </button>
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'punt');">
-              Punt 
-            </button>
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'pass');">
-              Pass 
-            </button>
-            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'throw');">
-              Throw
-            </button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'foot');">Foot</button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'head');">Head</button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'volley');">Volley</button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'punt');">Punt</button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'pass');">Pass</button>
+            <button class="btn btn-outline-primary surface-button" onclick="setSurface.call(this, 'throw');">Throw</button>
           </div>
         </div>
       </div>
-    </div>
-    <div class="row tracked-events flex-fill">
-      <div class="col-12"></div>
+
+      <!-- Events Table -->
+      <div class="col-12 tracked-events">
         <h5>Tracked Events</h5>
         <div class="event-table-wrapper">
           <table id="event-table" class="table table-sm table-hover table-bordered dt-responsive">
@@ -229,27 +167,18 @@
                 <th scope="col">X</th>
               </tr>
             </thead>
-            <tbody class="events">
-              <!-- Rows will be added here by JavaScript -->
-            </tbody>
+            <tbody class="events"></tbody>
           </table>
         </div>
       </div>
     </div>
-      </div>
-    </div>
   </div>
+
   <footer class="bg-dark text-center text-lg-start footer">
-    <div class="container p-4">
-      <div class="row">
-      </div>
-    </div>
+    <div class="container p-4"></div>
   </footer>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   <script src="index.js"></script>
-
 </body>
-
 </html>
