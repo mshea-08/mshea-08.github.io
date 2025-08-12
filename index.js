@@ -50,11 +50,51 @@ $(document).ready(function(){
     responsive: true,
     language: { searchPlaceholder: 'Filter by Detail and Event' }
   });
+
+  // Restore rows (includes note if present)
   if (state.rawShots.length){
     for (const r of state.rawShots){
-      addRowToTable(r.event, r.startX, r.startY, r.endX, r.endY, r.time, r.detail, r.surface, r.team, r.half, r.min, r.sec);
+      addRowToTable(
+        r.event, r.startX, r.startY, r.endX, r.endY,
+        r.time, r.detail, r.surface, r.team, r.half, r.min, r.sec,
+        r.note || ''
+      );
     }
   }
+
+  // Inline note editing (delegated)
+  $('#event-table tbody').on('click', 'td.note-cell', function(){
+    const td = this;
+    if (td.querySelector('.note-editor')) return; // already editing
+
+    const oldText = td.textContent || '';
+    td.dataset.old = oldText;
+
+    td.innerHTML = `<input type="text" class="form-control form-control-sm note-editor" />`;
+    const input = td.querySelector('.note-editor');
+    input.value = oldText;
+    input.focus(); input.select();
+
+    function save(val){
+      // Update table cell
+      state.table.cell(td).data(val).draw(false);
+
+      // Sync backing arrays by current display index
+      const rowEl = $(td).closest('tr')[0];
+      const idx = state.table.row(rowEl).index();
+      if (idx !== undefined && idx >= 0){
+        if (state.shotsData[idx]) { state.shotsData[idx].note = val; localStorage.setItem('shotsData', JSON.stringify(state.shotsData)); }
+        if (state.rawShots[idx])  { state.rawShots[idx].note  = val; sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots)); }
+      }
+    }
+    function cancel(){ state.table.cell(td).data(td.dataset.old || '').draw(false); }
+
+    input.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter'){ e.preventDefault(); save(input.value.trim()); }
+      else if (e.key === 'Escape'){ e.preventDefault(); cancel(); }
+    });
+    input.addEventListener('blur', ()=> save(input.value.trim()));
+  });
 });
 
 // -------------------------------
@@ -130,6 +170,11 @@ function finishDrag(){
   state.drag.active = false;
   const now = getCurrentDateTime();
   const wasDragged = state.drag.x1!==null && state.drag.y1!==null && state.drag.x2!==null && state.drag.y2!==null && (state.drag.x1!==state.drag.x2 || state.drag.y1!==state.drag.y2);
+
+  // Pull optional note (if note input exists)
+  const noteInput = document.getElementById('note');
+  const noteText = (noteInput?.value || '').trim();
+
   const rec = {
     event: state.currentActionType,
     startX: state.drag.x1, startY: state.drag.y1,
@@ -139,14 +184,29 @@ function finishDrag(){
     detail: state.currentDetail,
     surface: state.currentSurface,
     team: state.currentTeam,
-    half: state.half, min: state.min, sec: state.sec
+    half: state.half, min: state.min, sec: state.sec,
+    note: noteText
   };
-  addRowToTable(rec.event, rec.startX, rec.startY, rec.endX, rec.endY, rec.time, rec.detail, rec.surface, rec.team, rec.half, rec.min, rec.sec);
+
+  addRowToTable(
+    rec.event, rec.startX, rec.startY, rec.endX, rec.endY,
+    rec.time, rec.detail, rec.surface, rec.team, rec.half, rec.min, rec.sec,
+    rec.note
+  );
+
   state.rawShots.push(rec);
   sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots));
-  state.shotsData.push({ time: rec.time, detail: rec.detail, action: rec.event, surface: rec.surface, x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A', half: rec.half, min: rec.min, sec: rec.sec, team: rec.team });
+  state.shotsData.push({
+    time: rec.time, detail: rec.detail, action: rec.event, surface: rec.surface,
+    x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A',
+    half: rec.half, min: rec.min, sec: rec.sec, team: rec.team,
+    note: rec.note
+  });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
+
+  // Clear drag + (optional) clear note box after commit
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
+  if (noteInput) noteInput.value = '';
 }
 
 // -------------------------------
@@ -157,15 +217,54 @@ function getCurrentDateTime(){
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec){
+function getColumnIndexByHeader(headerNameLower){
+  const ths = document.querySelectorAll('#event-table thead th');
+  for (let i=0; i<ths.length; i++){
+    if ((ths[i].textContent || '').trim().toLowerCase() === headerNameLower) return i;
+  }
+  return -1;
+}
+
+function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec, note=''){
   const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) && Number.isFinite(endX) && Number.isFinite(endY) && (startX!==endX || startY!==endY);
-  const rowData = [ time, detail||'', eventName||'', surface||'', startX??'', startY??'', wasDragged?endX:'N/A', wasDragged?endY:'N/A', half??'', min??'', sec??'', team||'', "<button class='btn btn-outline-danger remove-button'>X</button>" ];
+
+  // Base columns up to 'team'
+  const base = [
+    time, detail||'', eventName||'', surface||'',
+    startX??'', startY??'', wasDragged?endX:'N/A', wasDragged?endY:'N/A',
+    half??'', min??'', sec??'', team||''
+  ];
+
+  // Insert NOTE if header exists (before delete column)
+  const noteIndex = getColumnIndexByHeader('note');
+  if (noteIndex !== -1){
+    base.splice(noteIndex, 0, note || '');
+  }
+  const rowData = base.concat("<button class='btn btn-outline-danger remove-button'>X</button>");
+
   const rowIdx = state.table.row.add(rowData).draw().index();
   const rowNode = state.table.row(rowIdx).node();
+
+  // store normalized coords for hover dots/arrows
   rowNode.dataset.dotx = (startX*1.0)/120; rowNode.dataset.doty = (startY*1.0)/80;
-  if (wasDragged){ rowNode.dataset.dotx2 = (endX*1.0)/120; rowNode.dataset.doty2 = (endY*1.0)/80; } else { delete rowNode.dataset.dotx2; delete rowNode.dataset.doty2; }
-  $(rowNode).on('mouseenter', function(){ showDot(this); }).on('mouseleave', function(){ removeDot(); });
+  if (wasDragged){ rowNode.dataset.dotx2 = (endX*1.0)/120; rowNode.dataset.doty2 = (endY*1.0)/80; }
+  else { delete rowNode.dataset.dotx2; delete rowNode.dataset.doty2; }
+
+  // hover dots
+  $(rowNode).on('mouseenter', function(){ showDot(this); })
+            .on('mouseleave', function(){ removeDot(); });
+
+  // delete
   $(rowNode).find('.remove-button').on('click', function(){ removeShot(this); });
+
+  // tag NOTE cell for inline editing
+  if (noteIndex !== -1){
+    const $cells = $(rowNode).find('td');
+    // DataTables renders all columns except headerless delete; our splice guarantees alignment
+    $cells.eq(noteIndex).addClass('note-cell');
+  }
+
+  // Show dot immediately
   $(rowNode).trigger('mouseenter');
 }
 
