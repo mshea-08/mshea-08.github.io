@@ -1,200 +1,83 @@
-body {
-  font-family: Arial, sans-serif;
+:root{
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --muted: #6b7280; /* gray-500 */
+  --brand: #0d6efd; /* bootstrap primary */
+  --border: #e5e7eb; /* gray-200 */
 }
 
-.app-container {
-  display: inline-flex;
+/* ===== Base / Layout ===== */
+html, body { height: 100%; }
+body { background: var(--bg); font-family: Arial, sans-serif; }
+.navbar { position: sticky; top: 0; z-index: 1030; }
+.instructions-button{ margin-right: .75rem; }
+.navbar-brand{ margin-left: .75rem; }
+
+.container-fluid { max-width: 1200px; }
+.pitch-heading{ margin: .75rem 0 0 0 !important; }
+.heading{ margin: .75rem 0 .25rem 0; }
+
+/* Make control blocks tighter on small screens */
+.button-container{ padding-top: .5rem; }
+.event-button, .detail-button, .surface-button, .team-button{
+  margin: .35rem 0; /* consolidate repeated margins */
+}
+
+/* Optional: make the vertical groups become grid on md- */
+@media (max-width: 767.98px){
+  .btn-group-vertical{ display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .35rem; }
+  .btn-group-vertical .btn{ width: 100%; }
+}
+
+/* ===== Pitch (responsive, keeps your coordinate logic) ===== */
+.pitch-container{ width: 100%; max-width: 720px; }
+#pitch{
   width: 100%;
-}
-
-.instructions-button{
-  margin-right: 0.75rem;
-}
-
-.navbar-brand{
-  margin-left: 0.75rem;
-}
-
-.pitch-heading{
-  margin-bottom: 0 !important;
-  margin-top: 0.75rem !important;
-}
-
-#pitch {
-  /* Height and width of image */
-  height: 391px; 
-  width: 600px;
+  aspect-ratio: 120 / 80; /* match your (120,80) coordinate space */
   background-color: #cccccc;
   background-image: url("soccer-field.png");
+  background-size: 100% 100%; /* keep proportions aligned with coordinates */
+  background-repeat: no-repeat;
+  background-position: center;
   position: relative;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
 }
-.goal {
+
+/* hover dots/arrows should never block mouse/touch */
+.dot, .arrow{ pointer-events: none; }
+.dot{
   position: absolute;
-  height: 28%; /* Adjusted for vertical orientation */
-  width: 5.23%; /* Narrower to be more realistic */
-  top: 35%;
-  background: none;
-  border: 2px solid #000;
+  width: .75rem; height: .75rem;
+  background-color: #000; border-radius: 50%;
+  z-index: 1; transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.6); /* improves visibility */
 }
-.goal.left {
-  left: 0;
-}
-.goal.right {
-  right: 0;
-}
-.center-circle {
-  position: absolute;
-  width: 100px;
-  height: 100px;
-  background: none;
-  border-radius: 50%;
-  border: 2px solid #000;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.center-spot {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: #fff;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-}
+.arrow{ position: absolute; z-index: 1; }
 
-.arrow-container {
-  display: flex;
-  align-items: center;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
+/* ===== Table (compact + sticky header + scroll area) ===== */
+.tracked-events{ margin-top: 1rem !important; }
+.event-table-wrapper{ border: 1px solid var(--border); border-radius: .5rem; overflow: hidden; background: var(--panel); }
 
-.button-container {
-  display: grid;
+/* Let DataTables layout scroll vertically while header sticks */
+.dt-layout-table{ max-height: 24rem !important; overflow-y: auto !important; }
+#event-table{ width: 100%; font-size: .9rem; margin: 0; }
+#event-table thead th{
+  position: sticky; top: 0; z-index: 2;
+  background: #111827; /* match .table-dark */ color: #fff;
 }
+#event-table th, #event-table td{ padding: .4rem .5rem; text-align: center; }
+.remove-button{ padding-top: 0 !important; padding-bottom: 0 !important; }
 
-.right-arrow {
-  display: inline-block;
-  margin-left: 2.5rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-top: 2px solid black;
-  border-left: 2px solid black;
-  transform-origin: center;
-  transform: rotate(135deg);
-}
+/* Tidy DataTables search alignment */
+.dt-search{ text-align: left !important; }
 
-.right-arrow::after {
-  content: "";
-  display: block;
-  width: 2px;
-  height: 45px;
-  background-color: black;
-  transform: rotate(-45deg) translate(15px, 4px);
-}
+/* Misc small utilities */
+.footer{ margin-top: 1rem; }
+#download-csv, #graphics-redirect{ margin-top: 1rem; }
 
-.button-group {
-  margin: 10px;
-  display: flex;
-  flex-direction: column;
-}
-
-.button-container{
-  display: inline;
-  padding-top: 1rem;
-}
-
-.button-group button {
-  padding: 5px 10px;
-  margin-right: 5px;
-  cursor: pointer;
-}
-
-.event-button{
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.detail-button{
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.surface-button{
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.team-button{
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.remove-button{
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.dot {
-  position: absolute;
-  width: 0.75rem;
-  height: 0.75rem;
-  background-color: black;
-  border-radius: 50%;
-  z-index: 1;
-  transform: translate(-50%, -50%);
-}
-
-
-.dt-layout-table{
-  overflow-y: scroll !important;
-  max-height: 20rem !important;
-}
-
-#event-table {
-  width: 100%;
-  margin-top: 20px;
-}
-#event-table th,
-#event-table td {
-  padding: 5px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
-
-#download-csv{
-  margin-top:1rem;
-}
-
-#graphics-redirect{
-  margin-top: 1rem;
-}
-
-.footer{
-  margin-top:1rem;
-}
-
-.tracked-events{
-  margin-top: 1rem !important;
-}
-
-.table-container{
-  overflow-y: scroll;
-  max-height: 25%;
-  height: 25%;
-}
-
-.table-scrollable {
-  display: inline-block;
-  width: 100%;
-  overflow-x: auto; /* Scroll on X-axis */
-  overflow-y: auto; /* Scroll on Y-axis */
-  max-height: 400px; /* Adjust based on your needs */
-}
-
-.dt-search{
-  text-align: left !important;
-}
-
+/* Keep your goal/center mark styles in case you re-enable them */
+.goal{ position: absolute; height: 28%; width: 5.23%; top: 35%; background: none; border: 2px solid #000; }
+.goal.left{ left: 0; } .goal.right{ right: 0; }
+.center-circle{ position: absolute; width: 100px; height: 100px; background: none; border-radius: 50%; border: 2px solid #000; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+.center-spot{ position: absolute; width: 4px; height: 4px; background: #fff; top: 50%; left: 50%; transform: translate(-50%,-50%); border-radius: 50%; }
