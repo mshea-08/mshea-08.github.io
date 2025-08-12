@@ -41,6 +41,31 @@ window.halfsave = halfsave; window.minsave = minsave; window.secsave = secsave;
 })();
 
 // -------------------------------
+// Typing shield — blocks all hotkeys while typing
+// -------------------------------
+(function(){
+  function isTypingTarget(el){
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toUpperCase() : '';
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.classList?.contains('note-editor');
+  }
+  // Swallow key events before any other handlers see them
+  const swallow = (e) => {
+    if (isTypingTarget(e.target)) {
+      // Let the character type normally:
+      // do NOT preventDefault, only stop propagation
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+  };
+  ['keydown','keypress','keyup'].forEach(type => {
+    document.addEventListener(type, swallow, true); // capture=true
+  });
+})();
+
+
+// -------------------------------
 // 2) DataTable init
 // -------------------------------
 $(document).ready(function(){
