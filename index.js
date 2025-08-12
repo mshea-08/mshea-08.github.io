@@ -183,83 +183,13 @@ function createArrow(x1,y1,x2,y2,id){
   pitchEl.appendChild(svg);
 }
 
-// Robust CSV export of the DataTable view (visible columns, filtered rows)
-function downloadCSV() {
-  const isDT = $.fn && $.fn.dataTable && $.fn.dataTable.isDataTable('#event-table');
-  const stripHTML = (v) => {
-    if (v == null) return '';
-    if (typeof v === 'string') {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = v;
-      return (tmp.textContent || tmp.innerText || '').trim();
-    }
-    return String(v);
-  };
-  const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
-
-  let headers = [];
-  let rows = [];
-
-  if (isDT) {
-    const dt = $('#event-table').DataTable();
-
-    // Choose columns that are currently visible and not the delete 'X' column
-    const visibleIdxs = dt.columns(':visible').indexes().toArray();
-    const exportIdxs = visibleIdxs.filter(i => {
-      const h = dt.column(i).header().textContent.trim().toLowerCase();
-      return h !== 'x' && h !== ''; // skip the delete column or any empty th
-    });
-
-    headers = exportIdxs.map(i => dt.column(i).header().textContent.trim());
-
-    // Get only the rows that match the current search/filter
-    dt.rows({ search: 'applied' }).every(function () {
-      const data = this.data(); // your table uses array data
-      rows.push(exportIdxs.map(i => stripHTML(data[i])));
-    });
-  } else {
-    // Fallback: read straight from the DOM (if DataTables isn't initialized yet)
-    const table = document.getElementById('event-table');
-    if (!table) { alert('No table found.'); return; }
-
-    const ths = Array.from(table.querySelectorAll('thead th'));
-    const exportIdxs = ths
-      .map((th, i) => ({ i, text: th.textContent.trim().toLowerCase() }))
-      .filter(({ i, text }) => text && text !== 'x')
-      .map(({ i }) => i);
-
-    headers = exportIdxs.map(i => ths[i].textContent.trim());
-
-    const trs = Array.from(table.querySelectorAll('tbody tr'));
-    rows = trs.map(tr => {
-      const tds = Array.from(tr.children);
-      return exportIdxs.map(i => stripHTML(tds[i]?.innerHTML ?? ''));
-    });
-  }
-
-  if (!rows.length) {
-    alert('No rows to export (try clearing filters?).');
-    return;
-  }
-
-  const csv = '\uFEFF' + [
-    headers.map(esc).join(','),
-    ...rows.map(r => r.map(esc).join(','))
-  ].join('\r\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'events.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
+function downloadCSV(){
+  fetch('/download_csv', { method:'POST', body: JSON.stringify(state.shotsData), headers:{ 'Content-Type':'application/json' } })
+  .then(r=> r.blob())
+  .then(blob=>{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shots_data.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); })
+  .catch(err=> console.error('CSV error:', err));
 }
-
 window.downloadCSV = downloadCSV;
-
-
 
 // Keyboard shortcuts retained
 
@@ -272,4 +202,90 @@ document.addEventListener('keydown', function(event){
   if (ek.hasOwnProperty(k)){ const idx = ek[k]; if (idx < eventButtons.length) eventButtons[idx].click(); }
   if (tk.hasOwnProperty(k)){ const idx = tk[k]; if (idx < teamButtons.length)  teamButtons[idx].click(); }
 });
+
+// === Power-tagging shortcuts ===
+// Detail & Surface hotkeys, Undo last tag, and Time nudges (sec & min)
+(function(){
+  // --- helpers ---
+  function byId(id){ return document.getElementById(id); }
+  function setFieldValue(id, val){ const el = byId(id); if(!el) return; el.value = String(val); el.dispatchEvent(new Event('change')); }
+  function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+
+  function adjustSeconds(delta){
+    const secEl = byId('sec'); const minEl = byId('min');
+    if (!secEl || !minEl) return;
+    let sec = Number(secEl.value || 0);
+    let min = Number(minEl.value || 0);
+    let total = min * 60 + sec + delta;
+    if (total < 0) total = 0;
+    const newMin = Math.floor(total / 60);
+    const newSec = total % 60;
+    setFieldValue('min', newMin);
+    setFieldValue('sec', newSec);
+  }
+
+  function adjustMinutes(delta){
+    const minEl = byId('min'); if (!minEl) return;
+    const cur = Number(minEl.value || 0);
+    const next = Math.max(0, cur + delta);
+    setFieldValue('min', next);
+  }
+
+  function undoLast(){
+    const tbody = document.querySelector('#event-table tbody');
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr');
+    const last = rows[rows.length - 1];
+    if (!last) return;
+    last.querySelector('.remove-button')?.click();
+  }
+
+  function clickButtonByText(classSel, text){
+    const target = text.toLowerCase();
+    const btn = Array.from(document.querySelectorAll(classSel))
+      .find(b => (b.textContent || '').toLowerCase().includes(target));
+    if (btn) btn.click();
+  }
+
+  // --- Hotkey maps ---
+  const detailKeyMap = {
+    'Q':'goal', 'W':'on target', 'E':'off target', 'R':'blocked',
+    'T':'complete', 'Y':'incomplete', 'U':'offside', 'I':'won ball', 'O':'lost ball'
+  };
+  const surfaceKeyMap = {
+    'Z':'foot', 'X':'head', 'C':'volley', 'V':'punt', 'B':'pass', 'N':'throw'
+  };
+
+  // --- Keyboard handler ---
+  document.addEventListener('keydown', function(e){
+    // Avoid repeated firing when key is held
+    if (e.repeat) return;
+    const k = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
+
+    // Detail hotkeys
+    if (detailKeyMap[k]) { clickButtonByText('.detail-button', detailKeyMap[k]); return; }
+    // Surface hotkeys
+    if (surfaceKeyMap[k]) { clickButtonByText('.surface-button', surfaceKeyMap[k]); return; }
+
+    // Undo last tag: Ctrl/Cmd + Z
+    if ((e.ctrlKey || e.metaKey) && (k === 'Z')) { e.preventDefault(); undoLast(); return; }
+
+    // Seconds nudge: '[' / ']' (±1 sec), Shift for ±5 sec
+    if (k === '[' || k === ']') {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      adjustSeconds(k === ']' ? +step : -step);
+      return;
+    }
+
+    // Minutes nudge: '-' / '=' (±1 min), Shift for ±5 min
+    if (k === '-' || k === '_' || k === '=' || k === '+') {
+      e.preventDefault();
+      const base = (k === '=' || k === '+') ? +1 : -1;
+      const step = e.shiftKey ? 5 : 1;
+      adjustMinutes(base * step);
+      return;
+    }
+  });
+})();
 
