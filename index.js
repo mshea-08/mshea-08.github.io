@@ -217,31 +217,33 @@ function getCurrentDateTime(){
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-function getColumnIndexByHeader(headerNameLower){
-  const ths = document.querySelectorAll('#event-table thead th');
-  for (let i=0; i<ths.length; i++){
-    if ((ths[i].textContent || '').trim().toLowerCase() === headerNameLower) return i;
-  }
-  return -1;
-}
-
 function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec, note=''){
-  const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) && Number.isFinite(endX) && Number.isFinite(endY) && (startX!==endX || startY!==endY);
+  const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) &&
+                     Number.isFinite(endX) && Number.isFinite(endY) &&
+                     (startX!==endX || startY!==endY);
 
-  // Base columns up to 'team'
-  const base = [
-    time, detail||'', eventName||'', surface||'',
-    startX??'', startY??'', wasDragged?endX:'N/A', wasDragged?endY:'N/A',
-    half??'', min??'', sec??'', team||''
-  ];
+  // Build row strictly following header order so columns never misalign.
+  const headers = Array.from(document.querySelectorAll('#event-table thead th'))
+    .map(th => (th.textContent || '').trim().toLowerCase());
 
-  // Insert NOTE if header exists (before delete column)
-  const noteIndex = getColumnIndexByHeader('note');
-  if (noteIndex !== -1){
-    base.splice(noteIndex, 0, note || '');
-  }
-  const rowData = base.concat("<button class='btn btn-outline-danger remove-button'>X</button>");
+  const values = {
+    'time'  : time,
+    'detail': detail || '',
+    'event' : eventName || '',
+    'surface': surface || '',
+    'x1'    : startX ?? '',
+    'y1'    : startY ?? '',
+    'x2'    : wasDragged ? endX : 'N/A',
+    'y2'    : wasDragged ? endY : 'N/A',
+    'half'  : half ?? '',
+    'min'   : min ?? '',
+    'sec'   : sec ?? '',
+    'team'  : team || '',
+    'note'  : note || '',
+    'x'     : "<button class='btn btn-outline-danger remove-button'>X</button>"
+  };
 
+  const rowData = headers.map(h => (h in values) ? values[h] : '');
   const rowIdx = state.table.row.add(rowData).draw().index();
   const rowNode = state.table.row(rowIdx).node();
 
@@ -258,9 +260,9 @@ function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surf
   $(rowNode).find('.remove-button').on('click', function(){ removeShot(this); });
 
   // tag NOTE cell for inline editing
+  const noteIndex = headers.indexOf('note');
   if (noteIndex !== -1){
     const $cells = $(rowNode).find('td');
-    // DataTables renders all columns except headerless delete; our splice guarantees alignment
     $cells.eq(noteIndex).addClass('note-cell');
   }
 
@@ -351,6 +353,12 @@ window.downloadCSV = downloadCSV;
 
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
+
+    // Do NOT trigger hotkeys while typing in inputs/areas/selects/contenteditable
+    const t = e.target;
+    const tag = t?.tagName?.toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return;
+
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
     // Undo: Ctrl/Cmd+Z
