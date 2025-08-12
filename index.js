@@ -1,8 +1,19 @@
-// --- Drop-in replacement to fix buttons not staying selected ---
-// Changes: toggleActive now uses the clicked element explicitly instead of document.activeElement.
-// Applies to Event, Detail, Surface, and Team buttons.
+// ===============================
+// Football Event Tracker — index.js (organized)
+// ===============================
+// Sections
+//   1) State & persistence
+//   2) DataTable init
+//   3) UI active-state helpers
+//   4) Pitch interactions
+//   5) Row / storage helpers
+//   6) CSV export (server POST)
+//   7) Keyboard shortcuts (events/details/surfaces/teams/undo/time)
+//   8) Button labels (adds (Key) to buttons in the UI)
 
-// ===== State =====
+// -------------------------------
+// 1) State & persistence
+// -------------------------------
 const state = {
   currentActionType: "",
   currentDetail: "",
@@ -29,6 +40,9 @@ window.halfsave = halfsave; window.minsave = minsave; window.secsave = secsave;
   try { const sd = localStorage.getItem("shotsData"); if (sd) state.shotsData = JSON.parse(sd) || []; } catch {}
 })();
 
+// -------------------------------
+// 2) DataTable init
+// -------------------------------
 $(document).ready(function(){
   state.table = $('#event-table').DataTable({
     paging: false,
@@ -43,7 +57,9 @@ $(document).ready(function(){
   }
 });
 
-// ===== Active-state helper (uses clicked element) =====
+// -------------------------------
+// 3) UI active-state helpers
+// -------------------------------
 function toggleActive(className, newValue, currentValue, clickedEl){
   const buttons = document.querySelectorAll('.' + className);
   // Toggle off if clicking same value
@@ -68,7 +84,9 @@ window.setDetail     = function(d){      _setDetail(d, this); };
 window.setSurface    = function(s){      _setSurface(s, this); };
 window.setTeam       = function(t){      _setTeam(t, this); };
 
-// ===== Pitch interactions =====
+// -------------------------------
+// 4) Pitch interactions
+// -------------------------------
 function normToPitch(clientX, clientY){
   const rect = pitchEl.getBoundingClientRect();
   const nx = ((clientX - rect.left) / pitchEl.offsetWidth) * 120;
@@ -131,6 +149,9 @@ function finishDrag(){
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
 }
 
+// -------------------------------
+// 5) Row / storage helpers
+// -------------------------------
 function getCurrentDateTime(){
   const now = new Date(); const pad = (n)=> String(n).padStart(2,'0');
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
@@ -183,6 +204,9 @@ function createArrow(x1,y1,x2,y2,id){
   pitchEl.appendChild(svg);
 }
 
+// -------------------------------
+// 6) CSV export (server POST)
+// -------------------------------
 function downloadCSV(){
   fetch('/download_csv', { method:'POST', body: JSON.stringify(state.shotsData), headers:{ 'Content-Type':'application/json' } })
   .then(r=> r.blob())
@@ -191,101 +215,89 @@ function downloadCSV(){
 }
 window.downloadCSV = downloadCSV;
 
-// Keyboard shortcuts retained
-
-document.addEventListener('keydown', function(event){
-  const eventButtons = document.querySelectorAll('.event-button');
-  const teamButtons  = document.querySelectorAll('.team-button');
-  const ek = { 'A':0,'S':1,'D':2,'F':3,'G':4,'H':5,'J':6,'K':7,'L':8,';':9,'.':10,',':11,'/':12 };
-  const tk = { 'N':0,'M':1 };
-  const k = event.key.length === 1 ? event.key.toUpperCase() : event.key;
-  if (ek.hasOwnProperty(k)){ const idx = ek[k]; if (idx < eventButtons.length) eventButtons[idx].click(); }
-  if (tk.hasOwnProperty(k)){ const idx = tk[k]; if (idx < teamButtons.length)  teamButtons[idx].click(); }
-});
-
-// === Power-tagging shortcuts ===
-// Detail & Surface hotkeys, Undo last tag, and Time nudges (sec & min)
+// -------------------------------
+// 7) Keyboard shortcuts
+// -------------------------------
 (function(){
+  // --- maps ---
+  const EVENT_HOTKEYS = [
+    ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'], ['H','cross'],
+    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
+    // ['O','opp goal']
+  ];
+  const DETAIL_HOTKEYS = [
+    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']
+  ];
+  const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
+  const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
+
   // --- helpers ---
-  function byId(id){ return document.getElementById(id); }
-  function setFieldValue(id, val){ const el = byId(id); if(!el) return; el.value = String(val); el.dispatchEvent(new Event('change')); }
-  function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
-
-  function adjustSeconds(delta){
-    const secEl = byId('sec'); const minEl = byId('min');
-    if (!secEl || !minEl) return;
-    let sec = Number(secEl.value || 0);
-    let min = Number(minEl.value || 0);
-    let total = min * 60 + sec + delta;
-    if (total < 0) total = 0;
-    const newMin = Math.floor(total / 60);
-    const newSec = total % 60;
-    setFieldValue('min', newMin);
-    setFieldValue('sec', newSec);
-  }
-
-  function adjustMinutes(delta){
-    const minEl = byId('min'); if (!minEl) return;
-    const cur = Number(minEl.value || 0);
-    const next = Math.max(0, cur + delta);
-    setFieldValue('min', next);
-  }
-
-  function undoLast(){
-    const tbody = document.querySelector('#event-table tbody');
-    if (!tbody) return;
-    const rows = tbody.querySelectorAll('tr');
-    const last = rows[rows.length - 1];
-    if (!last) return;
-    last.querySelector('.remove-button')?.click();
-  }
-
-  function clickButtonByText(classSel, text){
-    const target = text.toLowerCase();
-    const btn = Array.from(document.querySelectorAll(classSel))
-      .find(b => (b.textContent || '').toLowerCase().includes(target));
+  const norm = s => (s||'').toLowerCase();
+  function clickByText(selector, needle){
+    const btn = Array.from(document.querySelectorAll(selector)).find(b => norm(b.textContent).includes(norm(needle)));
     if (btn) btn.click();
   }
+  function undoLast(){
+    const tbody = document.querySelector('#event-table tbody'); if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr'); const last = rows[rows.length-1]; if (!last) return;
+    last.querySelector('.remove-button')?.click();
+  }
+  function setFieldValue(id, val){ const el = document.getElementById(id); if(!el) return; el.value = String(val); el.dispatchEvent(new Event('change')); }
+  function adjustSeconds(delta){
+    const sEl = document.getElementById('sec'); const mEl = document.getElementById('min'); if (!sEl || !mEl) return;
+    let total = Number(mEl.value||0)*60 + Number(sEl.value||0) + delta; if (total < 0) total = 0;
+    const newMin = Math.floor(total/60), newSec = total % 60; setFieldValue('min', newMin); setFieldValue('sec', newSec);
+  }
+  function adjustMinutes(delta){ const mEl = document.getElementById('min'); if(!mEl) return; const next = Math.max(0, Number(mEl.value||0) + delta); setFieldValue('min', next); }
 
-  // --- Hotkey maps ---
-  const detailKeyMap = {
-    'Q':'goal', 'W':'on target', 'E':'off target', 'R':'blocked',
-    'T':'complete', 'Y':'incomplete', 'U':'offside', 'I':'won ball', 'O':'lost ball'
-  };
-  const surfaceKeyMap = {
-    'Z':'foot', 'X':'head', 'C':'volley', 'V':'punt', 'B':'pass', 'N':'throw'
-  };
-
-  // --- Keyboard handler ---
   document.addEventListener('keydown', function(e){
-    // Avoid repeated firing when key is held
     if (e.repeat) return;
-    const k = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
+    const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
-    // Detail hotkeys
-    if (detailKeyMap[k]) { clickButtonByText('.detail-button', detailKeyMap[k]); return; }
-    // Surface hotkeys
-    if (surfaceKeyMap[k]) { clickButtonByText('.surface-button', surfaceKeyMap[k]); return; }
+    // Undo: Ctrl/Cmd+Z
+    if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); undoLast(); return; }
 
-    // Undo last tag: Ctrl/Cmd + Z
-    if ((e.ctrlKey || e.metaKey) && (k === 'Z')) { e.preventDefault(); undoLast(); return; }
+    // Time nudges: seconds [ ] (+Shift = ±5), minutes -/=
+    if (key === '[' || key === ']'){ e.preventDefault(); adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1)); return; }
+    if (key === '-' || key === '_' || key === '=' || key === '+'){ e.preventDefault(); adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1)); return; }
 
-    // Seconds nudge: '[' / ']' (±1 sec), Shift for ±5 sec
-    if (k === '[' || k === ']') {
-      e.preventDefault();
-      const step = e.shiftKey ? 5 : 1;
-      adjustSeconds(k === ']' ? +step : -step);
-      return;
+    // Teams: N/M and 1/2
+    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); b.click(); } return; }
+    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); b.click(); } return; }
+
+    // Events
+    for (const [k,txt] of EVENT_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.event-button', txt); return; } }
+
+    // Details
+    for (const [k,txt] of DETAIL_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.detail-button', txt); return; } }
+
+    // Surfaces (+ Throw = Shift+T)
+    for (const [k,txt] of SURFACE_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.surface-button', txt); return; } }
+    if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){ e.preventDefault(); clickByText('.surface-button','throw'); return; }
+  }, true); // capture=true so we win over any older handlers
+
+  // -------------------------------
+  // 8) Button labels — add (Key) into the button text
+  // -------------------------------
+  function stripParen(s){ return (s||'').replace(/\s*\([^)]+\)\s*$/,''); }
+  function labelButtons(){
+    // Events
+    for (const [k,txt] of EVENT_HOTKEYS){
+      const btn = Array.from(document.querySelectorAll('.event-button')).find(b => norm(b.textContent).includes(norm(txt)));
+      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
     }
-
-    // Minutes nudge: '-' / '=' (±1 min), Shift for ±5 min
-    if (k === '-' || k === '_' || k === '=' || k === '+') {
-      e.preventDefault();
-      const base = (k === '=' || k === '+') ? +1 : -1;
-      const step = e.shiftKey ? 5 : 1;
-      adjustMinutes(base * step);
-      return;
+    // Details
+    for (const [k,txt] of [['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']]){
+      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => norm(b.textContent).includes(norm(txt)));
+      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
     }
-  });
+    // Surfaces (Throw is ⇧T)
+    for (const [k,txt] of [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']]){
+      const btn = Array.from(document.querySelectorAll('.surface-button')).find(b => norm(b.textContent).includes(norm(txt)));
+      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
+    }
+    const throwBtn = Array.from(document.querySelectorAll('.surface-button')).find(b => norm(b.textContent).includes('throw'));
+    if (throwBtn){ throwBtn.textContent = `${stripParen(throwBtn.textContent)} (⇧T)`; }
+  }
+  document.addEventListener('DOMContentLoaded', labelButtons);
 })();
-
