@@ -183,48 +183,65 @@ function createArrow(x1,y1,x2,y2,id){
   pitchEl.appendChild(svg);
 }
 
-// Export the DataTable (visible rows) to CSV on the client
+// Robust CSV export of the DataTable view (visible columns, filtered rows)
 function downloadCSV() {
-  // Prefer the initialized DataTable
-  let dt = null;
-  if ($ && $.fn && $.fn.dataTable && $.fn.dataTable.isDataTable('#event-table')) {
-    dt = $('#event-table').DataTable();
-  }
+  const isDT = $.fn && $.fn.dataTable && $.fn.dataTable.isDataTable('#event-table');
+  const stripHTML = (v) => {
+    if (v == null) return '';
+    if (typeof v === 'string') {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = v;
+      return (tmp.textContent || tmp.innerText || '').trim();
+    }
+    return String(v);
+  };
+  const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
 
   let headers = [];
   let rows = [];
 
-  if (dt) {
-    // Build a list of column indices to export (skip the delete 'X' column)
-    const allHeaders = dt.columns().header().toArray().map(th => th.textContent.trim());
-    const exportIdxs = allHeaders
-      .map((h, i) => (h.toLowerCase() === 'x' ? null : i))
-      .filter(i => i !== null);
+  if (isDT) {
+    const dt = $('#event-table').DataTable();
 
-    headers = exportIdxs.map(i => allHeaders[i]);
-
-    // Get currently displayed rows (respects search/filter)
-    dt.rows({ search: 'applied' }).every(function () {
-      const data = this.data(); // array for your setup
-      rows.push(exportIdxs.map(i => data[i]));
+    // Choose columns that are currently visible and not the delete 'X' column
+    const visibleIdxs = dt.columns(':visible').indexes().toArray();
+    const exportIdxs = visibleIdxs.filter(i => {
+      const h = dt.column(i).header().textContent.trim().toLowerCase();
+      return h !== 'x' && h !== ''; // skip the delete column or any empty th
     });
-  } else if (window.state && Array.isArray(state.shotsData) && state.shotsData.length) {
-    // Fallback: export from state.shotsData if DataTables isn't ready
-    headers = ['time','detail','event','surface','x1','y1','x2','y2','half','min','sec','team'];
-    rows = state.shotsData.map(o => [
-      o.time, o.detail, o.action, o.surface, o.x, o.y, o.x2, o.y2, o.half, o.min, o.sec, o.team
-    ]);
+
+    headers = exportIdxs.map(i => dt.column(i).header().textContent.trim());
+
+    // Get only the rows that match the current search/filter
+    dt.rows({ search: 'applied' }).every(function () {
+      const data = this.data(); // your table uses array data
+      rows.push(exportIdxs.map(i => stripHTML(data[i])));
+    });
   } else {
-    alert('No data to export yet.');
+    // Fallback: read straight from the DOM (if DataTables isn't initialized yet)
+    const table = document.getElementById('event-table');
+    if (!table) { alert('No table found.'); return; }
+
+    const ths = Array.from(table.querySelectorAll('thead th'));
+    const exportIdxs = ths
+      .map((th, i) => ({ i, text: th.textContent.trim().toLowerCase() }))
+      .filter(({ i, text }) => text && text !== 'x')
+      .map(({ i }) => i);
+
+    headers = exportIdxs.map(i => ths[i].textContent.trim());
+
+    const trs = Array.from(table.querySelectorAll('tbody tr'));
+    rows = trs.map(tr => {
+      const tds = Array.from(tr.children);
+      return exportIdxs.map(i => stripHTML(tds[i]?.innerHTML ?? ''));
+    });
+  }
+
+  if (!rows.length) {
+    alert('No rows to export (try clearing filters?).');
     return;
   }
 
-  // CSV builder (Excel-friendly: includes BOM + CRLF)
-  const esc = (v) => {
-    if (v === null || v === undefined) v = '';
-    v = String(v);
-    return `"${v.replace(/"/g, '""')}"`;
-    };
   const csv = '\uFEFF' + [
     headers.map(esc).join(','),
     ...rows.map(r => r.map(esc).join(','))
@@ -240,8 +257,8 @@ function downloadCSV() {
   URL.revokeObjectURL(a.href);
 }
 
-// keep the global binding the same
 window.downloadCSV = downloadCSV;
+
 
 
 // Keyboard shortcuts retained
