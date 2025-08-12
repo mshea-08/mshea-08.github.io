@@ -46,23 +46,21 @@
         </div>
         <div class="card p-3">
           <div class="row g-2 align-items-end">
-            <div class="col-4">
+            <div class="col-6 col-md-3">
               <label class="form-label">Half</label>
               <input type="number" value="1" id="half" onchange="halfsave()" class="form-control form-control-sm" />
             </div>
-            <div class="col-4">
+            <div class="col-6 col-md-3">
               <label class="form-label">Min</label>
               <input type="number" value="0" id="min" onchange="minsave()" class="form-control form-control-sm" />
             </div>
-            <div class="col-4">
+            <div class="col-6 col-md-3">
               <label class="form-label">Sec</label>
               <input type="number" value="0" id="sec" onchange="secsave()" class="form-control form-control-sm" />
             </div>
-            <div class="col-12 d-flex gap-2 mt-2">
-              <div id="teamButtons" class="d-flex w-100 gap-2">
-                <button class="btn btn-sm btn-outline-primary flex-fill team-button" data-key="team1" onclick="setTeam.call(this, 'team 1');">Team 1 (N)</button>
-                <button class="btn btn-sm btn-outline-primary flex-fill team-button" data-key="team2" onclick="setTeam.call(this, 'team 2');">Team 2 (M)</button>
-              </div> 
+            <div class="col-6 col-md-3 d-flex gap-2">
+              <button class="btn btn-sm btn-outline-primary flex-fill team-button" onclick="setTeam.call(this, 'team 1');">Team 1 (N)</button>
+              <button class="btn btn-sm btn-outline-primary flex-fill team-button" onclick="setTeam.call(this, 'team 2');">Team 2 (M)</button>
             </div>
           </div>
         </div>
@@ -72,59 +70,57 @@
       <div class="col-lg-6">
         <div class="card p-3 mb-3">
           <h5 class="heading">Event</h5>
-            <div class="card p-3 mb-3">
-              <div id="eventButtons" class="d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="shot"             onclick="setActionType.call(this, 'shot');">Shot (A)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="cross"            onclick="setActionType.call(this, 'cross');">Cross (S)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="pass"             onclick="setActionType.call(this, 'pass');">Pass (D)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="dribble"          onclick="setActionType.call(this, 'dribble');">Dribble (F)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="goal_kick"        onclick="setActionType.call(this, 'goal kick');">Goal kick (G)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="goalie_restart"   onclick="setActionType.call(this, 'goalie restart');">Goalie restart (H)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="foul"             onclick="setActionType.call(this, 'foul');">Foul</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="opp_goal"         onclick="setActionType.call(this, 'opp goal');">Opponent Goal</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="free_kick"        onclick="setActionType.call(this, 'free kick');">Free kick (J)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="free_kick_shot"   onclick="setActionType.call(this, 'free kick shot');">Free kick shot (K)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="corner"           onclick="setActionType.call(this, 'corner');">Corner (L)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="throw_in"         onclick="setActionType.call(this, 'throw in');">Throw in (;)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="interception"     onclick="setActionType.call(this, 'interception');">Interception (.)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="tackle"           onclick="setActionType.call(this, 'tackle');">Tackle (,)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="clearance"        onclick="setActionType.call(this, 'clearance');">Clearance (/)</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="game_start"       onclick="setActionType.call(this, 'game start');">Game Start</button>
-                <button class="btn btn-sm btn-outline-primary event-button" data-key="game_stop"        onclick="setActionType.call(this, 'game stop');">Game Stop</button>
-              </div>
+          <div class="row">
+            <div class="col-sm-6">
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'shot');">Shot (A)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'cross');">Cross (S)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'pass');">Pass (D)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'dribble');">Dribble (F)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'goal kick');">Goal kick (G)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'goalie restart');">Goalie restart (H)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'foul');">Foul</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'opp goal');">Opponent Goal</button>
+            </div>
+            <div class="col-sm-6">
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'free kick');">Free kick (J)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'free kick shot');">Free kick shot (K)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'corner');">Corner (L)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'throw in');">Throw in (;)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'interception');">Interception (.)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'tackle');">Tackle (,)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'clearance');">Clearance (/)</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'game start');">Game Start</button>
+              <button class="btn btn-sm btn-outline-primary w-100 event-button" onclick="setActionType.call(this, 'game stop');">Game Stop</button>
             </div>
           </div>
-
+        </div>
 
         <div class="card p-3 mb-3">
           <h5 class="heading">Detail</h5>
-            <div class="card p-3 mb-3">
-            <div id="detailButtons" class="d-flex flex-wrap gap-2">
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="goal"        onclick="setDetail.call(this, 'goal');">Goal</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="on_target"   onclick="setDetail.call(this, 'on target');">On target</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="off_target"  onclick="setDetail.call(this, 'off target');">Off target</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="blocked"     onclick="setDetail.call(this, 'blocked');">Blocked</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="complete"    onclick="setDetail.call(this, 'complete');">Complete</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="incomplete"  onclick="setDetail.call(this, 'incomplete');">Incomplete</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="offside"     onclick="setDetail.call(this, 'offside');">Offside</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="won_ball"    onclick="setDetail.call(this, 'won ball');">Won ball</button>
-              <button class="btn btn-sm btn-outline-primary detail-button" data-key="lost_ball"   onclick="setDetail.call(this, 'lost ball');">Lost ball</button>
-            </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'goal');">Goal</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'on target');">On target</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'off target');">Off target</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">Blocked</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">Complete</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">Incomplete</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'offside');">Offside</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">Won ball</button>
+            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">Lost ball</button>
           </div>
         </div>
 
         <div class="card p-3">
           <h5 class="heading">Surface</h5>
-            <div class="card p-3">
-            <div id="surfaceButtons" class="d-flex flex-wrap gap-2">
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="foot"   onclick="setSurface.call(this, 'foot');">Foot</button>
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="head"   onclick="setSurface.call(this, 'head');">Head</button>
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="volley" onclick="setSurface.call(this, 'volley');">Volley</button>
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="punt"   onclick="setSurface.call(this, 'punt');">Punt</button>
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="pass"   onclick="setSurface.call(this, 'pass');">Pass</button>
-              <button class="btn btn-sm btn-outline-primary surface-button" data-key="throw"  onclick="setSurface.call(this, 'throw');">Throw</button>
-            </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'foot');">Foot</button>
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'head');">Head</button>
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'volley');">Volley</button>
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'punt');">Punt</button>
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'pass');">Pass</button>
+            <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'throw');">Throw</button>
           </div>
+        </div>
       </div>
     </div>
 
@@ -150,7 +146,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.datatables.net/2.0.1/js/dataTables.js"></script>
   <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
