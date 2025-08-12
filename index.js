@@ -317,25 +317,37 @@ function downloadCSV(){
 window.downloadCSV = downloadCSV;
 
 // -------------------------------
-// 7) Keyboard shortcuts
+// 7) Keyboard shortcuts  (safe while typing)
 // -------------------------------
 (function(){
   // --- maps ---
   const EVENT_HOTKEYS = [
     ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'], ['H','cross'],
-    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
+    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'],
+    [',','goal kick'], ['/','goalie restart'], ['P','foul']
     // ['O','opp goal']
   ];
   const DETAIL_HOTKEYS = [
-    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']
+    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'],
+    ['T','complete'], ['Y','incomplete'], ['U','offside'],
+    ['I','won ball'], ['O','lost ball']
   ];
-  const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
+  const SURFACE_HOTKEYS = [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']];
   const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
+
+  // Build a set of keys that should NOT escape when typing
+  const HOTKEYS_TO_BLOCK_WHEN_TYPING = new Set([
+    ...EVENT_HOTKEYS.map(([k])=>k),
+    ...DETAIL_HOTKEYS.map(([k])=>k),
+    ...SURFACE_HOTKEYS.map(([k])=>k),
+    '[',']','-','_','=','+','N','M','1','2'
+  ]);
 
   // --- helpers ---
   const norm = s => (s||'').toLowerCase();
   function clickByText(selector, needle){
-    const btn = Array.from(document.querySelectorAll(selector)).find(b => norm(b.textContent).includes(norm(needle)));
+    const btn = Array.from(document.querySelectorAll(selector))
+      .find(b => norm(b.textContent).includes(norm(needle)));
     if (btn) btn.click();
   }
   function undoLast(){
@@ -343,45 +355,52 @@ window.downloadCSV = downloadCSV;
     const rows = tbody.querySelectorAll('tr'); const last = rows[rows.length-1]; if (!last) return;
     last.querySelector('.remove-button')?.click();
   }
-  function setFieldValue(id, val){ const el = document.getElementById(id); if(!el) return; el.value = String(val); el.dispatchEvent(new Event('change')); }
+  function setFieldValue(id, val){
+    const el = document.getElementById(id); if(!el) return;
+    el.value = String(val); el.dispatchEvent(new Event('change'));
+  }
   function adjustSeconds(delta){
     const sEl = document.getElementById('sec'); const mEl = document.getElementById('min'); if (!sEl || !mEl) return;
     let total = Number(mEl.value||0)*60 + Number(sEl.value||0) + delta; if (total < 0) total = 0;
-    const newMin = Math.floor(total/60), newSec = total % 60; setFieldValue('min', newMin); setFieldValue('sec', newSec);
+    const newMin = Math.floor(total/60), newSec = total % 60;
+    setFieldValue('min', newMin); setFieldValue('sec', newSec);
   }
-  function adjustMinutes(delta){ const mEl = document.getElementById('min'); if(!mEl) return; const next = Math.max(0, Number(mEl.value||0) + delta); setFieldValue('min', next); }
+  function adjustMinutes(delta){
+    const mEl = document.getElementById('min'); if(!mEl) return;
+    const next = Math.max(0, Number(mEl.value||0) + delta);
+    setFieldValue('min', next);
+  }
+  function isTypingTarget(el){
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toUpperCase() : '';
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.classList?.contains('note-editor');
+  }
 
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
-
-    // Do NOT trigger hotkeys while typing in inputs/areas/selects/contenteditable
-    const t = e.target;
-    const tag = t?.tagName?.toUpperCase();
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return;
-
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
+    // 1) While typing in inputs/areas/contenteditable: allow typing,
+    //    but stop global hotkeys from escaping.
+    if (isTypingTarget(e.target)) {
+      if (HOTKEYS_TO_BLOCK_WHEN_TYPING.has(key) ||
+          ((e.ctrlKey || e.metaKey) && key === 'Z') ||
+          (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY)) {
+        // Do NOT preventDefault so the character still types.
+        e.stopImmediatePropagation(); // block other document keydown handlers
+      }
+      return; // never trigger hotkeys while typing
+    }
+
+    // 2) Global hotkeys (when not typing)
     // Undo: Ctrl/Cmd+Z
-    if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); undoLast(); return; }
+    if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); e.stopImmediatePropagation(); undoLast(); return; }
 
     // Time nudges: seconds [ ] (+Shift = ±5), minutes -/=
-    if (key === '[' || key === ']'){ e.preventDefault(); adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1)); return; }
-    if (key === '-' || key === '_' || key === '=' || key === '+'){ e.preventDefault(); adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1)); return; }
+    if (key === '[' || key === ']'){
+      e.preventDefault(); e.stopImmedi
 
-    // Teams: N/M and 1/2
-    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); b.click(); } return; }
-    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); b.click(); } return; }
-
-    // Events
-    for (const [k,txt] of EVENT_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.event-button', txt); return; } }
-
-    // Details
-    for (const [k,txt] of DETAIL_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.detail-button', txt); return; } }
-
-    // Surfaces (+ Throw = Shift+T)
-    for (const [k,txt] of SURFACE_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.surface-button', txt); return; } }
-    if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){ e.preventDefault(); clickByText('.surface-button','throw'); return; }
-  }, true); // capture=true so we win over any older handlers
 
   // -------------------------------
   // 8) Button labels — add (Key) into the button text
