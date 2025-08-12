@@ -81,3 +81,14 @@ body { background: var(--bg); font-family: Arial, sans-serif; }
 .goal.left{ left: 0; } .goal.right{ right: 0; }
 .center-circle{ position: absolute; width: 100px; height: 100px; background: none; border-radius: 50%; border: 2px solid #000; top: 50%; left: 50%; transform: translate(-50%,-50%); }
 .center-spot{ position: absolute; width: 4px; height: 4px; background: #fff; top: 50%; left: 50%; transform: translate(-50%,-50%); border-radius: 50%; }
+
+/* Make selected buttons clearly filled */
+.btn-outline-primary.active,
+.team-button.active,
+.event-button.active,
+.detail-button.active,
+.surface-button.active {
+  color: #fff !important;
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
