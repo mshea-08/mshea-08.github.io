@@ -64,6 +64,10 @@
               <button class="btn btn-sm btn-outline-primary flex-fill team-button" onclick="setTeam.call(this, 'team 1');">team 1</button>
               <button class="btn btn-sm btn-outline-primary flex-fill team-button" onclick="setTeam.call(this, 'team 2');">team 2</button>
             </div>
+            <div class="col-12 mt-2">
+              <label for="note" class="form-label">Note (optional)</label>
+              <input type="text" id="note" class="form-control form-control-sm" placeholder="Add a quick note…">
+            </div>
           </div>
         </div>
       </div>
@@ -134,7 +138,9 @@
             <tr>
               <th>time</th><th>detail</th><th>event</th><th>surface</th>
               <th>x1</th><th>y1</th><th>x2</th><th>y2</th>
-              <th>half</th><th>min</th><th>sec</th><th>team</th><th>X</th>
+              <th>half</th><th>min</th><th>sec</th><th>team</th>
+              <th>note</th>  <!-- ← add this -->
+              <th>X</th>
             </tr>
           </thead>
           <tbody class="events"></tbody>
