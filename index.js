@@ -40,30 +40,6 @@ window.halfsave = halfsave; window.minsave = minsave; window.secsave = secsave;
   try { const sd = localStorage.getItem("shotsData"); if (sd) state.shotsData = JSON.parse(sd) || []; } catch {}
 })();
 
-// -------------------------------
-// Typing shield — blocks all hotkeys while typing
-// -------------------------------
-(function(){
-  function isTypingTarget(el){
-    if (!el) return false;
-    if (el.isContentEditable) return true;
-    const tag = el.tagName ? el.tagName.toUpperCase() : '';
-    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.classList?.contains('note-editor');
-  }
-  // Swallow key events before any other handlers see them
-  const swallow = (e) => {
-    if (isTypingTarget(e.target)) {
-      // Let the character type normally:
-      // do NOT preventDefault, only stop propagation
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    }
-  };
-  ['keydown','keypress','keyup'].forEach(type => {
-    document.addEventListener(type, swallow, true); // capture=true
-  });
-})();
-
 
 // -------------------------------
 // 2) DataTable init
@@ -342,7 +318,7 @@ function downloadCSV(){
 window.downloadCSV = downloadCSV;
 
 // -------------------------------
-// 7) Keyboard shortcuts  (safe while typing)
+// 7) Keyboard shortcuts — non-invasive, safe while typing
 // -------------------------------
 (function(){
   // --- maps ---
@@ -359,14 +335,6 @@ window.downloadCSV = downloadCSV;
   ];
   const SURFACE_HOTKEYS = [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']];
   const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
-
-  // Build a set of keys that should NOT escape when typing
-  const HOTKEYS_TO_BLOCK_WHEN_TYPING = new Set([
-    ...EVENT_HOTKEYS.map(([k])=>k),
-    ...DETAIL_HOTKEYS.map(([k])=>k),
-    ...SURFACE_HOTKEYS.map(([k])=>k),
-    '[',']','-','_','=','+','N','M','1','2'
-  ]);
 
   // --- helpers ---
   const norm = s => (s||'').toLowerCase();
@@ -399,32 +367,58 @@ window.downloadCSV = downloadCSV;
     if (!el) return false;
     if (el.isContentEditable) return true;
     const tag = el.tagName ? el.tagName.toUpperCase() : '';
-    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.classList?.contains('note-editor');
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (el.classList && el.classList.contains('note-editor')) return true;
+    if (el.closest && el.closest('.dataTables_wrapper')) return true; // DT search box
+    return false;
   }
 
+  // Bubble-phase listener; only stops events we actually handle
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
+    if (isTypingTarget(e.target)) return; // let typing through
+
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
-    // 1) While typing in inputs/areas/contenteditable: allow typing,
-    //    but stop global hotkeys from escaping.
-    if (isTypingTarget(e.target)) {
-      if (HOTKEYS_TO_BLOCK_WHEN_TYPING.has(key) ||
-          ((e.ctrlKey || e.metaKey) && key === 'Z') ||
-          (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY)) {
-        // Do NOT preventDefault so the character still types.
-        e.stopImmediatePropagation(); // block other document keydown handlers
-      }
-      return; // never trigger hotkeys while typing
-    }
-
-    // 2) Global hotkeys (when not typing)
     // Undo: Ctrl/Cmd+Z
     if ((e.ctrlKey || e.metaKey) && key === 'Z'){ e.preventDefault(); e.stopImmediatePropagation(); undoLast(); return; }
 
     // Time nudges: seconds [ ] (+Shift = ±5), minutes -/=
     if (key === '[' || key === ']'){
-      e.preventDefault(); e.stopImmedi
+      e.preventDefault(); e.stopImmediatePropagation();
+      adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1));
+      return;
+    }
+    if (key === '-' || key === '_' || key === '=' || key === '+'){
+      e.preventDefault(); e.stopImmediatePropagation();
+      adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1));
+      return;
+    }
+
+    // Teams: N/M and 1/2
+    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); e.stopImmediatePropagation(); b.click(); } return; }
+    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); e.stopImmediatePropagation(); b.click(); } return; }
+
+    // Events
+    for (const [k,txt] of EVENT_HOTKEYS){
+      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.event-button', txt); return; }
+    }
+
+    // Details
+    for (const [k,txt] of DETAIL_HOTKEYS){
+      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.detail-button', txt); return; }
+    }
+
+    // Surfaces (+ Throw = Shift+T)
+    for (const [k,txt] of SURFACE_HOTKEYS){
+      if (key === k){ e.preventDefault(); e.stopImmediatePropagation(); clickByText('.surface-button', txt); return; }
+    }
+    if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){
+      e.preventDefault(); e.stopImmediatePropagation(); clickByText('.surface-button','throw'); return;
+    }
+  });
+})();
+
 
 
   // -------------------------------
