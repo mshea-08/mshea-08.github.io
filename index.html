@@ -15,6 +15,7 @@
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#exampleModal">Info</button>
       <button type="button" class="btn btn-sm btn-success" onclick="downloadCSV()">Export CSV</button>
+      <button type="button" class="btn btn-sm btn-outline-light" onclick="showHotkeys()">Hotkeys (?)</button>
     </div>
   </nav>
 
@@ -185,6 +186,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Hotkey Help Overlay -->
+<div id="hotkey-help" class="d-none">
+  <div class="hotkey-help-card">
+    <div class="hotkey-help-header">
+      <h5>Hotkeys</h5>
+      <button type="button" class="hotkey-help-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="hotkey-help-body"><!-- populated dynamically --></div>
+    <div class="text-end mt-2"><small>Press ? or Esc to close</small></div>
+  </div>
+</div>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
