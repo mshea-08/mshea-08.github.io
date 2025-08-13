@@ -97,20 +97,29 @@
 
         <div class="card p-3 mb-3">
           <h5 class="heading">Detail</h5>
-          <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'goal');">goal</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'on target');">on target</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'off target');">off target</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">blocked</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">complete</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">incomplete</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'offside');">offside</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">won ball</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">lost ball</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'injury time');">injury time</button>
-            <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'half');">half</button>
+
+            <!-- Line 1 -->
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'complete');">Complete</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'incomplete');">Incomplete</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'blocked');">Blocked</button>
+            </div>
+
+            <!-- Line 2 -->
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'goal');">Goal</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'on target');">On target</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'off target');">Off target</button>
+            </div>
+
+            <!-- Line 3 -->
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'won ball');">Won ball</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'lost ball');">Lost ball</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'injury');">Injury</button>
+              <button class="btn btn-sm btn-outline-primary detail-button" onclick="setDetail.call(this, 'half');">Half</button>
+            </div>
           </div>
-        </div>
 
         <div class="card p-3">
           <h5 class="heading">Surface</h5>
@@ -131,6 +140,7 @@
               <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'through ball');">through ball</button>
               <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'cutback');">cutback</button>
               <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'cross');">cross</button>
+              <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'offside');">offside</button>
             </div>
         </div>
       </div>
