@@ -313,18 +313,9 @@ window.downloadCSV = downloadCSV;
     const next = Math.max(0, Number(mEl.value||0) + delta);
     setFieldValue('min', next);
   }
-  function isTypingTarget(el){
-    if (!el) return false;
-    if (el.isContentEditable) return true;
-    const tag = el.tagName ? el.tagName.toUpperCase() : '';
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-    if (el.closest && el.closest('.dataTables_wrapper')) return true; // DataTables search
-    return false;
-  }
 
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
-    if (isTypingTarget(e.target)) return; // let typing through
 
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
