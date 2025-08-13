@@ -8,7 +8,7 @@
 //   4) Pitch interactions
 //   5) Row / storage helpers
 //   6) CSV export (server POST)
-//   7) Keyboard shortcuts (events/details/surfaces/teams/undo/time)
+//   7) Keyboard shortcuts (events/details/surfaces/teams/player/undo/time)
 //   8) Button labels (adds (Key) to buttons in the UI)
 
 // -------------------------------
@@ -17,9 +17,10 @@
 const state = {
   currentActionType: "",
   currentDetail: "",
-  currentPassDetail: "",   // NEW
+  currentPassDetail: "",
   currentSurface: "",
   currentTeam: "",
+  currentPlayer: "",          // NEW
   half: 1,
   min: 0,
   sec: 0,
@@ -51,11 +52,13 @@ $(document).ready(function(){
     responsive: true,
     language: { searchPlaceholder: 'Filter by Detail and Event' }
   });
+
   if (state.rawShots.length){
     for (const r of state.rawShots){
       addRowToTable(
         r.event, r.startX, r.startY, r.endX, r.endY,
-        r.time, r.detail, r.passDetail || "", r.surface, r.team, r.half, r.min, r.sec
+        r.time, r.detail, r.passDetail || "", r.surface,
+        r.half, r.min, r.sec, r.player || "", r.team || ""
       );
     }
   }
@@ -75,18 +78,19 @@ function toggleActive(className, newValue, currentValue, clickedEl){
   return newValue;
 }
 
-// Expose handlers that receive the element via inline `call(this, ...)`
 function _setActionType(actionType, el){ state.currentActionType = toggleActive('event-button', actionType, state.currentActionType, el); }
 function _setDetail(detail, el){        state.currentDetail     = toggleActive('detail-button', detail, state.currentDetail, el); }
-function _setPassDetail(detail, el){    state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el); } // NEW
+function _setPassDetail(detail, el){    state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el); }
 function _setSurface(surface, el){      state.currentSurface    = toggleActive('surface-button', surface, state.currentSurface, el); }
 function _setTeam(team, el){            state.currentTeam       = toggleActive('team-button', team, state.currentTeam, el); }
+function _setPlayer(player, el){        state.currentPlayer     = toggleActive('player-button', player, state.currentPlayer, el); } // NEW
 
 window.setActionType = function(action){ _setActionType(action, this); };
 window.setDetail     = function(d){      _setDetail(d, this); };
-window.setPassDetail = function(d){      _setPassDetail(d, this); }; // NEW
+window.setPassDetail = function(d){      _setPassDetail(d, this); };
 window.setSurface    = function(s){      _setSurface(s, this); };
 window.setTeam       = function(t){      _setTeam(t, this); };
+window.setPlayer     = function(p){      _setPlayer(p, this); }; // NEW
 
 // -------------------------------
 // 4) Pitch interactions
@@ -141,20 +145,31 @@ function finishDrag(){
     endY: wasDragged ? state.drag.y2 : null,
     time: now,
     detail: state.currentDetail,
-    passDetail: state.currentPassDetail, // NEW
+    passDetail: state.currentPassDetail,
     surface: state.currentSurface,
+    player: state.currentPlayer,         // NEW
     team: state.currentTeam,
     half: state.half, min: state.min, sec: state.sec
   };
   addRowToTable(
     rec.event, rec.startX, rec.startY, rec.endX, rec.endY,
-    rec.time, rec.detail, rec.passDetail, rec.surface, rec.team, rec.half, rec.min, rec.sec
+    rec.time, rec.detail, rec.passDetail, rec.surface,
+    rec.half, rec.min, rec.sec, rec.player, rec.team
   );
   state.rawShots.push(rec);
   sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots));
   state.shotsData.push({
-    time: rec.time, detail: rec.detail, pass_detail: rec.passDetail, action: rec.event, surface: rec.surface,
-    x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A', half: rec.half, min: rec.min, sec: rec.sec, team: rec.team
+    time: rec.time,
+    detail: rec.detail,
+    pass_detail: rec.passDetail,
+    action: rec.event,
+    surface: rec.surface,
+    x: rec.startX, y: rec.startY,
+    x2: wasDragged ? rec.endX : 'N/A',
+    y2: wasDragged ? rec.endY : 'N/A',
+    half: rec.half, min: rec.min, sec: rec.sec,
+    player: rec.player,                  // NEW
+    team: rec.team
   });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
@@ -168,24 +183,32 @@ function getCurrentDateTime(){
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-function addRowToTable(eventName, startX, startY, endX, endY, time, detail, passDetail, surface, team, half, min, sec){
+function addRowToTable(eventName, startX, startY, endX, endY, time, detail, passDetail, surface, half, min, sec, player, team){
   const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) && Number.isFinite(endX) && Number.isFinite(endY) && (startX!==endX || startY!==endY);
-  // NOTE: 'pass detail' column is after 'detail' in the header
+
+  // Header order (with new "player" before "team"):
+  // time, detail, pass detail, event, surface, x1, y1, x2, y2, half, min, sec, player, team, X
   const rowData = [
     time,
     detail || '',
-    passDetail || '',                 // NEW column
+    passDetail || '',
     eventName || '',
     surface || '',
-    startX ?? '', startY ?? '',
+    startX ?? '',
+    startY ?? '',
     wasDragged ? endX : 'N/A',
     wasDragged ? endY : 'N/A',
-    half ?? '', min ?? '', sec ?? '',
+    half ?? '',
+    min ?? '',
+    sec ?? '',
+    player || '',
     team || '',
     "<button class='btn btn-outline-danger remove-button'>X</button>"
   ];
+
   const rowIdx = state.table.row.add(rowData).draw().index();
   const rowNode = state.table.row(rowIdx).node();
+
   rowNode.dataset.dotx = (startX*1.0)/120; rowNode.dataset.doty = (startY*1.0)/80;
   if (wasDragged){ rowNode.dataset.dotx2 = (endX*1.0)/120; rowNode.dataset.doty2 = (endY*1.0)/80; } else { delete rowNode.dataset.dotx2; delete rowNode.dataset.doty2; }
   $(rowNode).on('mouseenter', function(){ showDot(this); }).on('mouseleave', function(){ removeDot(); });
@@ -240,30 +263,42 @@ function downloadCSV(){
 window.downloadCSV = downloadCSV;
 
 // -------------------------------
-// 7) Keyboard shortcuts
+// 7) Keyboard shortcuts (incl. Player)
 // -------------------------------
 (function(){
   // --- maps ---
   const EVENT_HOTKEYS = [
     ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'],
-    ['G','interception'], /* removed cross */ 
-    ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
-    // ['O','opp goal']
+    ['G','interception'], // 'cross' removed from events
+    ['J','clearance'], ['K','corner'], ['L','throw in'],
+    [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'],
+    ['P','foul']
   ];
+
+  // Detail layout you requested:
+  // complete, incomplete, blocked, | goal, on target, off target, | won ball, lost ball, injury, half
   const DETAIL_HOTKEYS = [
     ['T','complete'], ['Y','incomplete'], ['R','blocked'],
     ['Q','goal'], ['W','on target'], ['E','off target'],
     ['I','won ball'], ['O','lost ball'],
-    ['U','injury'],   // new
-    ['H','half']      // new
+    ['U','injury'],
+    ['H','half']
   ];
+
   const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
-  const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
+  const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T for 'throw'
+
+  // NEW: Player hotkeys — high priority & convenient (use Shift to avoid conflicts)
+  // ⇧G = GK, ⇧D = Def, ⇧M = Mid, ⇧F = Fwd
+  const PLAYER_HOTKEYS = [
+    ['G','GK'], ['D','def'], ['M','mid'], ['F','fwd']
+  ];
 
   // --- helpers ---
   const norm = s => (s||'').toLowerCase();
   function clickByText(selector, needle){
-    const btn = Array.from(document.querySelectorAll(selector)).find(b => norm(b.textContent).includes(norm(needle)));
+    const btn = Array.from(document.querySelectorAll(selector))
+      .find(b => norm(b.textContent).includes(norm(needle)));
     if (btn) btn.click();
   }
   function undoLast(){
@@ -278,9 +313,19 @@ window.downloadCSV = downloadCSV;
     const newMin = Math.floor(total/60), newSec = total % 60; setFieldValue('min', newMin); setFieldValue('sec', newSec);
   }
   function adjustMinutes(delta){ const mEl = document.getElementById('min'); if(!mEl) return; const next = Math.max(0, Number(mEl.value||0) + delta); setFieldValue('min', next); }
+  function isTypingTarget(el){
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (el.closest && el.closest('.dataTables_wrapper')) return true; // DataTables search
+    return false;
+  }
 
   document.addEventListener('keydown', function(e){
     if (e.repeat) return;
+    if (isTypingTarget(e.target)) return; // let typing through
+
     const key = (e.key && e.key.length === 1) ? e.key.toUpperCase() : e.key;
 
     // Undo: Ctrl/Cmd+Z
@@ -294,6 +339,13 @@ window.downloadCSV = downloadCSV;
     if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); b.click(); } return; }
     if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); b.click(); } return; }
 
+    // Player (⇧G/⇧D/⇧M/⇧F)
+    if (e.shiftKey){
+      for (const [k,txt] of PLAYER_HOTKEYS){
+        if (key === k){ e.preventDefault(); clickByText('.player-button', txt); return; }
+      }
+    }
+
     // Events
     for (const [k,txt] of EVENT_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.event-button', txt); return; } }
 
@@ -303,30 +355,40 @@ window.downloadCSV = downloadCSV;
     // Surfaces (+ Throw = Shift+T)
     for (const [k,txt] of SURFACE_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.surface-button', txt); return; } }
     if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){ e.preventDefault(); clickByText('.surface-button','throw'); return; }
-  }, true); // capture=true so we win over any older handlers
+  }, true);
 
   // -------------------------------
   // 8) Button labels — add (Key) into the button text
   // -------------------------------
   function stripParen(s){ return (s||'').replace(/\s*\([^)]+\)\s*$/,''); }
   function labelButtons(){
-    // Events (no 'cross' here anymore)
-    for (const [k,txt] of EVENT_HOTKEYS){
-      const btn = Array.from(document.querySelectorAll('.event-button')).find(b => norm(b.textContent).includes(norm(txt)));
-      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
+    // Events
+    for (const [k,txt] of [
+      ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'],
+      ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
+    ]){
+      const btn = Array.from(document.querySelectorAll('.event-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
     }
+
     // Details (driven by DETAIL_HOTKEYS)
-    for (const [k,txt] of DETAIL_HOTKEYS){
-      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => (b.textContent || '').toLowerCase().includes(txt.toLowerCase()));
-      if (btn){ btn.textContent = btn.textContent.replace(/\s*\([^)]+\)\s*$/,'') + ` (${k})`;
+    for (const [k,txt] of [['T','complete'], ['Y','incomplete'], ['R','blocked'], ['Q','goal'], ['W','on target'], ['E','off target'], ['I','won ball'], ['O','lost ball'], ['U','injury'], ['H','half']]){
+      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
     }
-  }
+
+    // Player (⇧G/⇧D/⇧M/⇧F)
+    for (const [k,txt] of [['G','gk'], ['D','def'], ['M','mid'], ['F','fwd']]){
+      const btn = Array.from(document.querySelectorAll('.player-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (⇧${k})`;
+    }
+
     // Surfaces (Throw is ⇧T)
     for (const [k,txt] of [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']]){
-      const btn = Array.from(document.querySelectorAll('.surface-button')).find(b => norm(b.textContent).includes(norm(txt)));
-      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
+      const btn = Array.from(document.querySelectorAll('.surface-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
     }
-    const throwBtn = Array.from(document.querySelectorAll('.surface-button')).find(b => norm(b.textContent).includes('throw'));
+    const throwBtn = Array.from(document.querySelectorAll('.surface-button')).find(b => (b.textContent||'').toLowerCase().includes('throw'));
     if (throwBtn){ throwBtn.textContent = `${stripParen(throwBtn.textContent)} (⇧T)`; }
   }
   document.addEventListener('DOMContentLoaded', labelButtons);
