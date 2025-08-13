@@ -92,6 +92,39 @@ window.setSurface    = function(s){      _setSurface(s, this); };
 window.setTeam       = function(t){      _setTeam(t, this); };
 window.setPlayer     = function(p){      _setPlayer(p, this); }; // NEW
 
+function syncPassDetailBin(){
+  const isPass = state.currentActionType === 'pass';
+  const bin = document.getElementById('pass-detail-bin');
+  const btns = document.querySelectorAll('.pass-detail-button');
+
+  // Show/hide the bin
+  if (bin) bin.classList.toggle('d-none', !isPass);
+
+  // Enable/disable the buttons for visual feedback
+  btns.forEach(b => {
+    b.disabled = !isPass;
+    b.classList.toggle('disabled', !isPass);
+  });
+
+  // If not pass, clear selection from UI + state
+  if (!isPass){
+    state.currentPassDetail = "";
+    document.querySelectorAll('.pass-detail-button.active').forEach(b => b.classList.remove('active'));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', syncPassDetailBin);
+
+function _setActionType(actionType, el){
+  state.currentActionType = toggleActive('event-button', actionType, state.currentActionType, el);
+  syncPassDetailBin(); // <- add this line
+}
+
+function _setPassDetail(detail, el){
+  if (state.currentActionType !== 'pass') return; // ignore if not Pass
+  state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el);
+}
+
 // -------------------------------
 // 4) Pitch interactions
 // -------------------------------
