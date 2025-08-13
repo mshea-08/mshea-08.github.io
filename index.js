@@ -17,6 +17,7 @@
 const state = {
   currentActionType: "",
   currentDetail: "",
+  currentPassDetail: "",   // NEW
   currentSurface: "",
   currentTeam: "",
   half: 1,
@@ -52,7 +53,10 @@ $(document).ready(function(){
   });
   if (state.rawShots.length){
     for (const r of state.rawShots){
-      addRowToTable(r.event, r.startX, r.startY, r.endX, r.endY, r.time, r.detail, r.surface, r.team, r.half, r.min, r.sec);
+      addRowToTable(
+        r.event, r.startX, r.startY, r.endX, r.endY,
+        r.time, r.detail, r.passDetail || "", r.surface, r.team, r.half, r.min, r.sec
+      );
     }
   }
 });
@@ -62,12 +66,10 @@ $(document).ready(function(){
 // -------------------------------
 function toggleActive(className, newValue, currentValue, clickedEl){
   const buttons = document.querySelectorAll('.' + className);
-  // Toggle off if clicking same value
   if (newValue === currentValue){
     buttons.forEach(b => b.classList.remove('active'));
     return "";
   }
-  // Set new selection
   buttons.forEach(b => b.classList.remove('active'));
   if (clickedEl) clickedEl.classList.add('active');
   return newValue;
@@ -76,11 +78,13 @@ function toggleActive(className, newValue, currentValue, clickedEl){
 // Expose handlers that receive the element via inline `call(this, ...)`
 function _setActionType(actionType, el){ state.currentActionType = toggleActive('event-button', actionType, state.currentActionType, el); }
 function _setDetail(detail, el){        state.currentDetail     = toggleActive('detail-button', detail, state.currentDetail, el); }
+function _setPassDetail(detail, el){    state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el); } // NEW
 function _setSurface(surface, el){      state.currentSurface    = toggleActive('surface-button', surface, state.currentSurface, el); }
 function _setTeam(team, el){            state.currentTeam       = toggleActive('team-button', team, state.currentTeam, el); }
 
 window.setActionType = function(action){ _setActionType(action, this); };
 window.setDetail     = function(d){      _setDetail(d, this); };
+window.setPassDetail = function(d){      _setPassDetail(d, this); }; // NEW
 window.setSurface    = function(s){      _setSurface(s, this); };
 window.setTeam       = function(t){      _setTeam(t, this); };
 
@@ -137,14 +141,21 @@ function finishDrag(){
     endY: wasDragged ? state.drag.y2 : null,
     time: now,
     detail: state.currentDetail,
+    passDetail: state.currentPassDetail, // NEW
     surface: state.currentSurface,
     team: state.currentTeam,
     half: state.half, min: state.min, sec: state.sec
   };
-  addRowToTable(rec.event, rec.startX, rec.startY, rec.endX, rec.endY, rec.time, rec.detail, rec.surface, rec.team, rec.half, rec.min, rec.sec);
+  addRowToTable(
+    rec.event, rec.startX, rec.startY, rec.endX, rec.endY,
+    rec.time, rec.detail, rec.passDetail, rec.surface, rec.team, rec.half, rec.min, rec.sec
+  );
   state.rawShots.push(rec);
   sessionStorage.setItem('rawShots', JSON.stringify(state.rawShots));
-  state.shotsData.push({ time: rec.time, detail: rec.detail, action: rec.event, surface: rec.surface, x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A', half: rec.half, min: rec.min, sec: rec.sec, team: rec.team });
+  state.shotsData.push({
+    time: rec.time, detail: rec.detail, pass_detail: rec.passDetail, action: rec.event, surface: rec.surface,
+    x: rec.startX, y: rec.startY, x2: rec.endX ?? 'N/A', y2: rec.endY ?? 'N/A', half: rec.half, min: rec.min, sec: rec.sec, team: rec.team
+  });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
 }
@@ -157,9 +168,22 @@ function getCurrentDateTime(){
   return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
-function addRowToTable(eventName, startX, startY, endX, endY, time, detail, surface, team, half, min, sec){
+function addRowToTable(eventName, startX, startY, endX, endY, time, detail, passDetail, surface, team, half, min, sec){
   const wasDragged = Number.isFinite(startX) && Number.isFinite(startY) && Number.isFinite(endX) && Number.isFinite(endY) && (startX!==endX || startY!==endY);
-  const rowData = [ time, detail||'', eventName||'', surface||'', startX??'', startY??'', wasDragged?endX:'N/A', wasDragged?endY:'N/A', half??'', min??'', sec??'', team||'', "<button class='btn btn-outline-danger remove-button'>X</button>" ];
+  // NOTE: 'pass detail' column is after 'detail' in the header
+  const rowData = [
+    time,
+    detail || '',
+    passDetail || '',                 // NEW column
+    eventName || '',
+    surface || '',
+    startX ?? '', startY ?? '',
+    wasDragged ? endX : 'N/A',
+    wasDragged ? endY : 'N/A',
+    half ?? '', min ?? '', sec ?? '',
+    team || '',
+    "<button class='btn btn-outline-danger remove-button'>X</button>"
+  ];
   const rowIdx = state.table.row.add(rowData).draw().index();
   const rowNode = state.table.row(rowIdx).node();
   rowNode.dataset.dotx = (startX*1.0)/120; rowNode.dataset.doty = (startY*1.0)/80;
@@ -221,7 +245,8 @@ window.downloadCSV = downloadCSV;
 (function(){
   // --- maps ---
   const EVENT_HOTKEYS = [
-    ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'], ['H','cross'],
+    ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'],
+    ['G','interception'], /* removed cross */ 
     ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
     // ['O','opp goal']
   ];
@@ -281,7 +306,7 @@ window.downloadCSV = downloadCSV;
   // -------------------------------
   function stripParen(s){ return (s||'').replace(/\s*\([^)]+\)\s*$/,''); }
   function labelButtons(){
-    // Events
+    // Events (no 'cross' here anymore)
     for (const [k,txt] of EVENT_HOTKEYS){
       const btn = Array.from(document.querySelectorAll('.event-button')).find(b => norm(b.textContent).includes(norm(txt)));
       if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
