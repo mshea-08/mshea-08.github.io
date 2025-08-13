@@ -28,7 +28,6 @@ const state = {
   rawShots: [],
   table: null,
   drag: { active: false, x1: null, y1: null, x2: null, y2: null },
-  lastPreset: null, // ← NEW
 };
 
 const pitchEl = document.getElementById("pitch");
@@ -126,68 +125,6 @@ function _setPassDetail(detail, el){
   state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el);
 }
 
-// === Repeat-last helpers ===
-function findButtonByText(selector, needle){
-  const target = (needle || "").toLowerCase();
-  return Array.from(document.querySelectorAll(selector))
-    .find(b => (b.textContent || "").toLowerCase().includes(target));
-}
-function clickIfFound(selector, label){
-  const btn = findButtonByText(selector, label);
-  if (btn) btn.click();
-}
-
-function setFieldValue(id, val){
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.value = String(val);
-  el.dispatchEvent(new Event('change')); // keeps state.* in sync
-}
-function adjustSecondsGlobal(delta){
-  const secEl = document.getElementById('sec');
-  const minEl = document.getElementById('min');
-  if (!secEl || !minEl) return;
-  let total = Number(minEl.value||0)*60 + Number(secEl.value||0) + delta;
-  if (total < 0) total = 0;
-  const newMin = Math.floor(total/60);
-  const newSec = total % 60;
-  setFieldValue('min', newMin);
-  setFieldValue('sec', newSec);
-}
-
-function saveLastPreset(){
-  state.lastPreset = {
-    action: state.currentActionType || "",
-    detail: state.currentDetail || "",
-    passDetail: state.currentPassDetail || "",
-    surface: state.currentSurface || "",
-    player: state.currentPlayer || "",
-    team: state.currentTeam || "",
-  };
-}
-
-function applyLastPreset(advanceSeconds = 0){
-  const p = state.lastPreset;
-  if (!p) return;
-
-  // Re-select buttons via existing click handlers (so .active states update)
-  if (p.action)     clickIfFound('.event-button',         p.action);
-  if (p.detail)     clickIfFound('.detail-button',        p.detail);
-  if (p.surface)    clickIfFound('.surface-button',       p.surface);
-  if (p.player)     clickIfFound('.player-button',        p.player);
-  if (p.team)       clickIfFound('.team-button',          p.team);
-
-  // Pass Detail is context-aware (only when action === 'pass')
-  if (p.action === 'pass' && p.passDetail){
-    clickIfFound('.pass-detail-button', p.passDetail);
-  }
-
-  // Optional time bump to speed up clusters
-  if (advanceSeconds) adjustSecondsGlobal(advanceSeconds);
-}
-
-// Expose (handy if you want a tiny "Repeat" button later)
-window.repeatLast = () => applyLastPreset(0);
 
 
 // -------------------------------
@@ -270,7 +207,6 @@ function finishDrag(){
     team: rec.team
   });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
-  saveLastPreset(); // remember the current selection for next time
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
 }
 
@@ -442,13 +378,6 @@ window.downloadCSV = downloadCSV;
 
     // ⛔️ No team hotkeys anymore (intentionally removed)
   }, true);
-
-  // Repeat last selection: Shift+R (also nudges time +2s)
-if (e.shiftKey && (key === 'R')) {
-  e.preventDefault();
-  applyLastPreset(2);
-  return;
-}
 
   // -------------------------------
   // 8) Button labels — keep in sync with hotkeys
