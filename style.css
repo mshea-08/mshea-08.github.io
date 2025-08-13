@@ -92,3 +92,20 @@ body { background: var(--bg); font-family: Arial, sans-serif; }
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;
 }
+
+/* Hotkey help overlay */
+#hotkey-help.d-none { display: none; }
+#hotkey-help {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center; z-index: 1050;
+}
+.hotkey-help-card {
+  background: #fff; border-radius: .5rem; max-width: 720px; width: calc(100% - 2rem);
+  max-height: 80vh; overflow: auto; box-shadow: 0 0.5rem 1rem rgba(0,0,0,.2);
+  padding: 1rem 1.25rem;
+}
+.hotkey-help-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+.hotkey-help-header h5 { margin: 0; }
+.hotkey-help-close { border: none; background: transparent; font-size: 1.25rem; line-height: 1; }
+.hotkey-help-body h6 { margin-top: .5rem; }
+.hotkey-help-body .hk-key { text-align: right; white-space: nowrap; }
