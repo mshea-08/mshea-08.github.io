@@ -383,6 +383,19 @@ window.downloadCSV = downloadCSV;
     // ✅ Player hotkeys on 1/2/3/4
     for (const [k,txt] of PLAYER_HOTKEYS){
       if (key === k){ e.preventDefault(); clickByText('.player-button', txt); return; }
+    // Reset seconds to 0  →  Shift+0
+    if (e.shiftKey && (key === '0' || key === ')')) { // browsers report ')' for Shift+0
+      e.preventDefault();
+      // If you have setFieldValue in this scope, use it:
+      if (typeof setFieldValue === 'function') {
+        setFieldValue('sec', 0);
+      } else {
+        const s = document.getElementById('sec');
+      if (s) { s.value = '0'; s.dispatchEvent(new Event('change')); }
+      }
+      return;
+    }
+    
     }
 
     // Events
