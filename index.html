@@ -124,6 +124,15 @@
             <button class="btn btn-sm btn-outline-primary surface-button" onclick="setSurface.call(this, 'throw');">throw</button>
           </div>
         </div>
+        <div class="card p-3 mb-3">
+          <h5 class="heading">Pass Detail</h5>
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'line-break');">line-break</button>
+              <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'through ball');">through ball</button>
+              <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'cutback');">cutback</button>
+              <button class="btn btn-sm btn-outline-primary pass-detail-button" onclick="setPassDetail.call(this, 'cross');">cross</button>
+            </div>
+        </div>
       </div>
     </div>
 
@@ -134,9 +143,19 @@
         <table id="event-table" class="table table-sm table-hover table-bordered dt-responsive">
           <thead class="table-dark">
             <tr>
-              <th>time</th><th>detail</th><th>event</th><th>surface</th>
-              <th>x1</th><th>y1</th><th>x2</th><th>y2</th>
-              <th>half</th><th>min</th><th>sec</th><th>team</th>
+              <th>time</th>
+              <th>detail</th>
+              <th>pass detail</th>
+              <th>event</th>
+              <th>surface</th>
+              <th>x1</th>
+              <th>y1</th>
+              <th>x2</th>
+              <th>y2</th>
+              <th>half</th>
+              <th>min</th>
+              <th>sec</th>
+              <th>team</th>
               <th>X</th>
             </tr>
           </thead>
