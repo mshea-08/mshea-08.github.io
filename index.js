@@ -263,20 +263,19 @@ function downloadCSV(){
 window.downloadCSV = downloadCSV;
 
 // -------------------------------
-// 7) Keyboard shortcuts (incl. Player)
+// 7) Keyboard shortcuts (no team hotkeys; Player = 1/2/3/4)
 // -------------------------------
 (function(){
   // --- maps ---
   const EVENT_HOTKEYS = [
     ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'],
-    ['G','interception'], // 'cross' removed from events
+    ['G','interception'],
     ['J','clearance'], ['K','corner'], ['L','throw in'],
     [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'],
     ['P','foul']
   ];
 
-  // Detail layout you requested:
-  // complete, incomplete, blocked, | goal, on target, off target, | won ball, lost ball, injury, half
+  // Detail layout you chose
   const DETAIL_HOTKEYS = [
     ['T','complete'], ['Y','incomplete'], ['R','blocked'],
     ['Q','goal'], ['W','on target'], ['E','off target'],
@@ -285,14 +284,11 @@ window.downloadCSV = downloadCSV;
     ['H','half']
   ];
 
-  const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
+  const SURFACE_HOTKEYS = [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']];
   const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T for 'throw'
 
-  // NEW: Player hotkeys — high priority & convenient (use Shift to avoid conflicts)
-  // ⇧G = GK, ⇧D = Def, ⇧M = Mid, ⇧F = Fwd
-  const PLAYER_HOTKEYS = [
-    ['G','GK'], ['D','def'], ['M','mid'], ['F','fwd']
-  ];
+  // NEW: Player on number keys (no Shift)
+  const PLAYER_HOTKEYS = [['1','GK'], ['2','def'], ['3','mid'], ['4','fwd']];
 
   // --- helpers ---
   const norm = s => (s||'').toLowerCase();
@@ -312,7 +308,11 @@ window.downloadCSV = downloadCSV;
     let total = Number(mEl.value||0)*60 + Number(sEl.value||0) + delta; if (total < 0) total = 0;
     const newMin = Math.floor(total/60), newSec = total % 60; setFieldValue('min', newMin); setFieldValue('sec', newSec);
   }
-  function adjustMinutes(delta){ const mEl = document.getElementById('min'); if(!mEl) return; const next = Math.max(0, Number(mEl.value||0) + delta); setFieldValue('min', next); }
+  function adjustMinutes(delta){
+    const mEl = document.getElementById('min'); if(!mEl) return;
+    const next = Math.max(0, Number(mEl.value||0) + delta);
+    setFieldValue('min', next);
+  }
   function isTypingTarget(el){
     if (!el) return false;
     if (el.isContentEditable) return true;
@@ -335,15 +335,9 @@ window.downloadCSV = downloadCSV;
     if (key === '[' || key === ']'){ e.preventDefault(); adjustSeconds(e.shiftKey ? (key === ']' ? +5 : -5) : (key === ']' ? +1 : -1)); return; }
     if (key === '-' || key === '_' || key === '=' || key === '+'){ e.preventDefault(); adjustMinutes((key === '=' || key === '+') ? (e.shiftKey ? +5 : +1) : (e.shiftKey ? -5 : -1)); return; }
 
-    // Teams: N/M and 1/2
-    if (key === 'N' || key === '1'){ const b=document.querySelectorAll('.team-button')[0]; if (b){ e.preventDefault(); b.click(); } return; }
-    if (key === 'M' || key === '2'){ const b=document.querySelectorAll('.team-button')[1]; if (b){ e.preventDefault(); b.click(); } return; }
-
-    // Player (⇧G/⇧D/⇧M/⇧F)
-    if (e.shiftKey){
-      for (const [k,txt] of PLAYER_HOTKEYS){
-        if (key === k){ e.preventDefault(); clickByText('.player-button', txt); return; }
-      }
+    // ✅ Player hotkeys on 1/2/3/4
+    for (const [k,txt] of PLAYER_HOTKEYS){
+      if (key === k){ e.preventDefault(); clickByText('.player-button', txt); return; }
     }
 
     // Events
@@ -355,7 +349,47 @@ window.downloadCSV = downloadCSV;
     // Surfaces (+ Throw = Shift+T)
     for (const [k,txt] of SURFACE_HOTKEYS){ if (key === k){ e.preventDefault(); clickByText('.surface-button', txt); return; } }
     if (e.shiftKey && key === SURFACE_THROW_SHIFT_KEY){ e.preventDefault(); clickByText('.surface-button','throw'); return; }
+
+    // ⛔️ No team hotkeys anymore (intentionally removed)
   }, true);
+
+  // -------------------------------
+  // 8) Button labels — keep in sync with hotkeys
+  // -------------------------------
+  function stripParen(s){ return (s||'').replace(/\s*\([^)]+\)\s*$/,''); }
+  function labelButtons(){
+    // Events
+    for (const [k,txt] of [
+      ['A','pass'], ['S','shot'], ['D','dribble'], ['F','tackle'], ['G','interception'],
+      ['J','clearance'], ['K','corner'], ['L','throw in'], [';','free kick'], ['.','free kick shot'], [',','goal kick'], ['/','goalie restart'], ['P','foul']
+    ]){
+      const btn = Array.from(document.querySelectorAll('.event-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
+    }
+
+    // Details
+    for (const [k,txt] of [['T','complete'], ['Y','incomplete'], ['R','blocked'], ['Q','goal'], ['W','on target'], ['E','off target'], ['I','won ball'], ['O','lost ball'], ['U','injury'], ['H','half']]){
+      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
+    }
+
+    // Player — label with (1)/(2)/(3)/(4)
+    for (const [k,txt] of [['1','gk'], ['2','def'], ['3','mid'], ['4','fwd']]){
+      const btn = Array.from(document.querySelectorAll('.player-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
+    }
+
+    // Surfaces (Throw is ⇧T)
+    for (const [k,txt] of [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']]){
+      const btn = Array.from(document.querySelectorAll('.surface-button')).find(b => (b.textContent||'').toLowerCase().includes(txt));
+      if (btn) btn.textContent = `${stripParen(btn.textContent)} (${k})`;
+    }
+    const throwBtn = Array.from(document.querySelectorAll('.surface-button')).find(b => (b.textContent||'').toLowerCase().includes('throw'));
+    if (throwBtn){ throwBtn.textContent = `${stripParen(throwBtn.textContent)} (⇧T)`; }
+  }
+  document.addEventListener('DOMContentLoaded', labelButtons);
+})();
+
 
   // -------------------------------
   // 8) Button labels — add (Key) into the button text
