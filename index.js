@@ -415,3 +415,77 @@ window.downloadCSV = downloadCSV;
   }
   document.addEventListener('DOMContentLoaded', labelButtons);
 })();
+
+// -------------------------------
+// Hotkey Help overlay (toggle with '?')
+// -------------------------------
+(function(){
+  function parseLabelAndKey(text){
+    const m = (text||'').match(/\s*\(([^)]+)\)\s*$/);
+    const key = m ? m[1] : '';
+    const label = m ? (text||'').replace(/\s*\([^)]+\)\s*$/,'').trim() : (text||'').trim();
+    return { label, key };
+  }
+
+  function buildSectionHTML(title, selector){
+    const buttons = Array.from(document.querySelectorAll(selector));
+    if (!buttons.length) return '';
+    const rows = buttons.map(b=>{
+      const {label, key} = parseLabelAndKey(b.textContent||'');
+      if (!key) return ''; // skip items without a hotkey (e.g., Teams)
+      return `<tr><td>${label}</td><td class="hk-key">${key}</td></tr>`;
+    }).filter(Boolean).join('');
+    if (!rows) return '';
+    return `<h6>${title}</h6><table class="table table-sm"><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderHotkeyHelp(){
+    const root = document.getElementById('hotkey-help'); if (!root) return;
+    const body = root.querySelector('.hotkey-help-body'); if (!body) return;
+
+    const sections = [
+      ['Events', '.event-button'],
+      ['Detail', '.detail-button'],
+      ['Pass Detail', '.pass-detail-button'],
+      ['Surface', '.surface-button'],
+      ['Player', '.player-button'],
+    ];
+    const html = sections.map(([t,sel])=> buildSectionHTML(t, sel)).join('') + `
+      <h6>Global</h6>
+      <table class="table table-sm"><tbody>
+        <tr><td>Undo last</td><td class="hk-key">Ctrl/Cmd+Z</td></tr>
+        <tr><td>Nudge seconds</td><td class="hk-key">[ / ] (Shift = ±5s)</td></tr>
+        <tr><td>Nudge minutes</td><td class="hk-key">- / = (Shift = ±5m)</td></tr>
+        <tr><td>Show/Hide this help</td><td class="hk-key">?</td></tr>
+        <tr><td>Close</td><td class="hk-key">Esc</td></tr>
+      </tbody></table>`;
+    body.innerHTML = html;
+  }
+
+  function toggleHotkeyHelp(force){
+    const root = document.getElementById('hotkey-help'); if (!root) return;
+    const show = force != null ? !!force : root.classList.contains('d-none');
+    if (show){ renderHotkeyHelp(); root.classList.remove('d-none'); }
+    else { root.classList.add('d-none'); }
+  }
+
+  // Toggle with '?' (or Shift+'/') and close with Esc
+  document.addEventListener('keydown', function(e){
+    const key = e.key || '';
+    if (key === '?' || (e.shiftKey && key === '/')) { e.preventDefault(); toggleHotkeyHelp(); }
+    else if (key === 'Escape') { toggleHotkeyHelp(false); }
+  });
+
+  // Click backdrop or × to close
+  document.addEventListener('click', function(e){
+    const root = document.getElementById('hotkey-help');
+    if (!root || root.classList.contains('d-none')) return;
+    if (e.target === root || e.target.closest('.hotkey-help-close')) {
+      toggleHotkeyHelp(false);
+    }
+  });
+
+  // Optional: expose a function for a navbar button
+  window.showHotkeys = ()=> toggleHotkeyHelp(true);
+})();
+
