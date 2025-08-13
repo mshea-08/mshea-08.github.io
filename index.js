@@ -125,6 +125,23 @@ function _setPassDetail(detail, el){
   state.currentPassDetail = toggleActive('pass-detail-button', detail, state.currentPassDetail, el);
 }
 
+// Clear selections that should reset after each tag
+function clearAutoClearedBins(){
+  // Surface
+  state.currentSurface = "";
+  document.querySelectorAll('.surface-button.active')
+    .forEach(b => b.classList.remove('active'));
+
+  // Pass Detail
+  state.currentPassDetail = "";
+  document.querySelectorAll('.pass-detail-button.active')
+    .forEach(b => b.classList.remove('active'));
+
+  // Player
+  state.currentPlayer = "";
+  document.querySelectorAll('.player-button.active')
+    .forEach(b => b.classList.remove('active'));
+}
 
 
 // -------------------------------
@@ -207,6 +224,8 @@ function finishDrag(){
     team: rec.team
   });
   localStorage.setItem('shotsData', JSON.stringify(state.shotsData));
+  // ✅ Auto-clear these bins after logging a tag
+  clearAutoClearedBins();
   state.drag.x1 = state.drag.y1 = state.drag.x2 = state.drag.y2 = null;
 }
 
