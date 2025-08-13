@@ -66,6 +66,15 @@
             </div>
           </div>
         </div>
+        <div class="card p-3 mb-3">
+          <h5 class="heading">Player</h5>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary player-button" onclick="setPlayer.call(this, 'GK');">GK</button>
+            <button class="btn btn-sm btn-outline-primary player-button" onclick="setPlayer.call(this, 'def');">Def</button>
+            <button class="btn btn-sm btn-outline-primary player-button" onclick="setPlayer.call(this, 'mid');">Mid</button>
+            <button class="btn btn-sm btn-outline-primary player-button" onclick="setPlayer.call(this, 'fwd');">Fwd</button>
+          </div>
+        </div>
       </div>
 
       <!-- Event Controls -->
@@ -165,6 +174,7 @@
               <th>half</th>
               <th>min</th>
               <th>sec</th>
+              <th>player</th>
               <th>team</th>
               <th>X</th>
             </tr>
