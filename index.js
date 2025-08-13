@@ -251,7 +251,11 @@ window.downloadCSV = downloadCSV;
     // ['O','opp goal']
   ];
   const DETAIL_HOTKEYS = [
-    ['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']
+    ['T','complete'], ['Y','incomplete'], ['R','blocked'],
+    ['Q','goal'], ['W','on target'], ['E','off target'],
+    ['I','won ball'], ['O','lost ball'],
+    ['U','injury'],   // new
+    ['H','half']      // new
   ];
   const SURFACE_HOTKEYS = [ ['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass'] ];
   const SURFACE_THROW_SHIFT_KEY = 'T'; // ⇧T
@@ -311,11 +315,12 @@ window.downloadCSV = downloadCSV;
       const btn = Array.from(document.querySelectorAll('.event-button')).find(b => norm(b.textContent).includes(norm(txt)));
       if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
     }
-    // Details
-    for (const [k,txt] of [['Q','goal'], ['W','on target'], ['E','off target'], ['R','blocked'], ['T','complete'], ['Y','incomplete'], ['U','offside'], ['I','won ball'], ['O','lost ball']]){
-      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => norm(b.textContent).includes(norm(txt)));
-      if (btn){ btn.textContent = `${stripParen(btn.textContent)} (${k})`; }
+    // Details (driven by DETAIL_HOTKEYS)
+    for (const [k,txt] of DETAIL_HOTKEYS){
+      const btn = Array.from(document.querySelectorAll('.detail-button')).find(b => (b.textContent || '').toLowerCase().includes(txt.toLowerCase()));
+      if (btn){ btn.textContent = btn.textContent.replace(/\s*\([^)]+\)\s*$/,'') + ` (${k})`;
     }
+  }
     // Surfaces (Throw is ⇧T)
     for (const [k,txt] of [['Z','foot'], ['X','head'], ['C','volley'], ['V','punt'], ['B','pass']]){
       const btn = Array.from(document.querySelectorAll('.surface-button')).find(b => norm(b.textContent).includes(norm(txt)));
