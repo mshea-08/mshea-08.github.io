@@ -306,15 +306,63 @@ function createArrow(x1,y1,x2,y2,id){
 }
 
 // -------------------------------
-// 6) CSV export (server POST)
+// 6) CSV export (client-side from the DataTable)
 // -------------------------------
-function downloadCSV(){
-  fetch('/download_csv', { method:'POST', body: JSON.stringify(state.shotsData), headers:{ 'Content-Type':'application/json' } })
-  .then(r=> r.blob())
-  .then(blob=>{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shots_data.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); })
-  .catch(err=> console.error('CSV error:', err));
+function downloadCSV(){             // keeps your navbar button working
+  exportFromTable(true);            // true = export FILTERED rows (what you see)
 }
 window.downloadCSV = downloadCSV;
+
+// Optional helpers if you ever want both buttons:
+// window.downloadCSVAll = () => exportFromTable(false);  // export ALL rows
+
+function exportFromTable(onlyFiltered = true){
+  if (!state || !state.table){
+    console.error('DataTable not ready');
+    return;
+  }
+
+  const api = state.table;
+
+  // Build header list from the THEAD (drop the last "X" column)
+  const ths = Array.from(document.querySelectorAll('#event-table thead th'));
+  const colCount = Math.max(0, ths.length - 1);   // exclude the delete column
+  const headers = ths.slice(0, colCount).map(th => (th.textContent || '').trim());
+
+  // Get rows from DataTables (filtered = current view; all = full table)
+  const dtRows = api.rows(onlyFiltered ? { search: 'applied' } : undefined).data().toArray();
+
+  // Escape -> CSV
+  const escapeCSV = (v) => {
+    let s = (v == null ? '' : String(v));
+    // strip any HTML tags (e.g., if a cell had markup)
+    s = s.replace(/<[^>]*>/g, '');
+    // normalize whitespace
+    s = s.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+    // quote/escape
+    if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+
+  const lines = [];
+  lines.push(headers.map(escapeCSV).join(','));
+  for (const r of dtRows){
+    const cells = r.slice(0, colCount).map(escapeCSV);
+    lines.push(cells.join(','));
+  }
+
+  const csv = lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'events.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 
 // -------------------------------
 // 7) Keyboard shortcuts (no team hotkeys; Player = 1/2/3/4)
